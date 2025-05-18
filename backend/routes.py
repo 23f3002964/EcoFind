@@ -76,6 +76,47 @@ def register_routes(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
         
+     
+    # ---------------------------- User Profile Routes --------------------------- #
+    @app.route('/api/user/profile', methods=['PUT'])
+    @login_required
+    def update_profile():
+        try:
+            data = request.get_json()
+            user = current_user
+            
+            # Update user fields if provided
+            if data.get('username') and data['username'] != user.username:
+                if User.query.filter_by(username=data['username']).first():
+                    return jsonify({'error': 'Username already taken'}), 409
+                user.username = data['username']
+            
+            if data.get('email') and data['email'] != user.email:
+                if User.query.filter_by(email=data['email']).first():
+                    return jsonify({'error': 'Email already registered'}), 409
+                user.email = data['email']
+            
+            # Update optional fields
+            if 'first_name' in data:
+                user.first_name = data['first_name']
+            if 'last_name' in data:
+                user.last_name = data['last_name']
+            if 'phone_number' in data:
+                user.phone_number = data['phone_number']
+            if 'address' in data:
+                user.address = data['address']
+            
+            # Update password if provided
+            if data.get('password'):
+                user.set_password(data['password'])
+            
+            db.session.commit()
+            return jsonify({'message': 'Profile updated successfully', 'user': user.to_dict()}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+        
 
 
 
