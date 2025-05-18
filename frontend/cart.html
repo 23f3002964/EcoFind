@@ -17,17 +17,67 @@
 
     <!-- Cart Items -->
     <h2 class="text-xl font-bold mb-4">Your Cart</h2>
-    <div v-if="cartItems.length" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <div v-for="item in cartItems" :key="item.id" class="bg-white rounded shadow p-4">
-        <img :src="item.product.image_url || '/placeholder.svg'" class="w-full h-40 object-cover rounded mb-2">
-        <h3 class="text-lg font-semibold">{{ item.product.title }}</h3>
-        <p class="text-gray-600">Qty: {{ item.quantity }}</p>
-        <p class="text-green-700 font-bold mt-1">₹{{ item.product.price }}</p>
-        <button @click="removeItem(item.id)" class="mt-3 text-sm text-red-600 underline">Remove</button>
+    <div v-if="cartItems.length">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+        <div v-for="item in cartItems" :key="item.id" class="bg-white rounded shadow p-4">
+          <img :src="item.product.image_url || '/placeholder.svg'" class="w-full h-40 object-cover rounded mb-2">
+          <h3 class="text-lg font-semibold">{{ item.product.title }}</h3>
+          <p class="text-gray-600">Qty: {{ item.quantity }}</p>
+          <p class="text-green-700 font-bold mt-1">₹{{ item.product.price }}</p>
+          <button @click="removeItem(item.id)" class="mt-3 text-sm text-red-600 underline">Remove</button>
+        </div>
+      </div>
+      
+      <!-- Cart Summary and Checkout -->
+      <div class="bg-white rounded shadow p-4 mt-4">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">Cart Summary</h3>
+          <p class="text-green-700 font-bold">Total: ₹{{ cartTotal }}</p>
+        </div>
+        <button 
+          @click="checkout" 
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-200"
+          :disabled="isProcessing"
+        >
+          {{ isProcessing ? 'Processing...' : 'Checkout' }}
+        </button>
       </div>
     </div>
 
-    <div v-else class="text-gray-500">Your cart is empty.</div>
+    <div v-else class="text-gray-500 p-8 text-center">
+      <p class="mb-4">Your cart is empty.</p>
+      <a href="products.html" class="text-green-600 underline">Browse Products</a>
+    </div>
+    
+    <!-- Success Message -->
+    <div v-if="showSuccessMessage" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md">
+        <h3 class="text-xl font-bold text-green-600 mb-2">Purchase Successful!</h3>
+        <p class="mb-4">Your order has been placed successfully.</p>
+        <p class="mb-4 text-gray-700">Transaction ID: {{ transactionId }}</p>
+        <div class="flex justify-end">
+          <button @click="viewPurchases" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 mr-2">
+            View Purchases
+          </button>
+          <button @click="continueShopping" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="errorMessage" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md">
+        <h3 class="text-xl font-bold text-red-600 mb-2">Error</h3>
+        <p class="mb-4">{{ errorMessage }}</p>
+        <div class="flex justify-end">
+          <button @click="errorMessage = ''" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -35,8 +85,19 @@
     createApp({
       data() {
         return {
-          cartItems: []
+          cartItems: [],
+          isProcessing: false,
+          showSuccessMessage: false,
+          errorMessage: '',
+          transactionId: ''
         };
+      },
+      computed: {
+        cartTotal() {
+          return this.cartItems.reduce((total, item) => {
+            return total + (item.product.price * item.quantity);
+          }, 0).toFixed(2);
+        }
       },
       methods: {
         async fetchCart() {
@@ -44,24 +105,87 @@
             const res = await fetch('http://127.0.0.1:5000/api/cart', {
               credentials: 'include'
             });
+            
+            if (!res.ok) {
+              if (res.status === 401) {
+                // Redirect to login if unauthorized
+                window.location.href = 'login.html';
+                return;
+              }
+              throw new Error('Failed to fetch cart');
+            }
+            
             const data = await res.json();
             this.cartItems = data.cart_items || [];
           } catch (err) {
             console.error('Failed to fetch cart', err);
+            this.errorMessage = 'Failed to load your cart. Please try again.';
           }
         },
+        
         async removeItem(cartItemId) {
           try {
             const res = await fetch(`http://127.0.0.1:5000/api/cart/${cartItemId}`, {
               method: 'DELETE',
               credentials: 'include'
             });
+            
             if (res.ok) {
               this.cartItems = this.cartItems.filter(item => item.id !== cartItemId);
+            } else {
+              throw new Error('Failed to remove item');
             }
           } catch (err) {
             console.error('Failed to delete item', err);
+            this.errorMessage = 'Failed to remove item from cart. Please try again.';
           }
+        },
+        
+        async checkout() {
+          if (this.cartItems.length === 0) {
+            this.errorMessage = 'Your cart is empty. Add items before checking out.';
+            return;
+          }
+          
+          this.isProcessing = true;
+          
+          try {
+            const res = await fetch('http://127.0.0.1:5000/api/purchases', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            const data = await res.json();
+            
+            if (res.ok) {
+              // Store transaction ID for display
+              this.transactionId = data.purchase.transaction_id;
+              
+              // Clear cart after successful purchase
+              this.cartItems = [];
+              this.showSuccessMessage = true;
+            } else {
+              throw new Error(data.error || 'Checkout failed');
+            }
+          } catch (err) {
+            console.error('Failed to complete checkout', err);
+            this.errorMessage = err.message || 'Failed to complete checkout. Please try again.';
+          } finally {
+            this.isProcessing = false;
+          }
+        },
+        
+        continueShopping() {
+          this.showSuccessMessage = false;
+          window.location.href = 'products.html';
+        },
+        
+        viewPurchases() {
+          this.showSuccessMessage = false;
+          window.location.href = 'purchases.html';
         }
       },
       mounted() {

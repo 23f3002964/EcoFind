@@ -1,5 +1,5 @@
 # routes.py
-from flask import request, jsonify
+from flask import request, jsonify,render_template
 from flask_login import login_required, current_user, login_user, logout_user, login_manager
 from models import User, Category, Product, CartItem, Purchase, PurchaseItem
 from app import db
@@ -7,7 +7,6 @@ from extensions import login_manager
 
 def register_routes(app):
     # Now use app inside this function
-
     
     @login_manager.user_loader
     def load_user(user_id):
@@ -384,6 +383,7 @@ def register_routes(app):
     # ------------------------------ Purchase Routes ----------------------------- #
     @app.route('/api/purchases', methods=['POST'])
     @login_required
+
     def create_purchase():
         try:
             # Get user's cart items
@@ -401,11 +401,12 @@ def register_routes(app):
                 total_amount=total_amount
             )
             db.session.add(purchase)
+            db.session.flush()  # This flushes the transaction and assigns an ID to the purchase
             
             # Create purchase items and mark products as sold
             for cart_item in cart_items:
                 purchase_item = PurchaseItem(
-                    purchase_id=purchase.id,
+                    purchase_id=purchase.id,  # Now purchase.id is available
                     product_id=cart_item.product_id,
                     quantity=cart_item.quantity,
                     price_at_purchase=cart_item.product.price
@@ -427,7 +428,7 @@ def register_routes(app):
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 500
-    
+
     @app.route('/api/purchases', methods=['GET'])
     @login_required
     def get_user_purchases():
