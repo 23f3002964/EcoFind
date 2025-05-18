@@ -65,10 +65,10 @@
     cd ../frontend
     ```
 
-2. Install dependencies:
+2. Serve index file :
 
     ```bash
-    npm install
+    By clicking GO Live
     ```
 
 3. Start the Vue development server:
