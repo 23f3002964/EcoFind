@@ -12,9 +12,23 @@
     <!-- Header -->
     <header class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-green-600">EcoFinds</h1>
-      <button @click="goToAdd" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-        + Add Product
-      </button>
+      <div class="flex gap-3">
+        <button @click="previous_purchase" class="text-sm text-gray-700 border border-gray-300 px-3 py-1 rounded hover:bg-gray-100">
+          Orders
+        </button>
+        <button @click="goToCart" class="text-sm text-gray-700 border border-gray-300 px-3 py-1 rounded hover:bg-gray-100">
+          Cart
+        </button>
+        <button @click="goToDashboard" class="text-sm text-green-700 border border-green-600 px-3 py-1 rounded hover:bg-green-100">
+          User Dashboard
+        </button>
+        <button @click="goToMyListings" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">
+          My Listings
+        </button>
+        <button @click="goToAdd" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          + Add Product
+        </button>
+      </div>
     </header>
 
     <!-- Search + Filter -->
@@ -34,7 +48,11 @@
         <img :src="product.image_url || '/placeholder.svg'" class="w-full h-40 object-cover rounded mb-2" />
         <h2 class="text-lg font-semibold">{{ product.title }}</h2>
         <p class="text-green-600 font-bold text-md mt-1">₹{{ product.price }}</p>
+        <button @click="addToCart(product.id)" class="mt-2 text-sm text-white bg-green-600 px-3 py-1 rounded hover:bg-green-700">
+          Add to Cart
+        </button>
       </div>
+      
     </div>
   </div>
 
@@ -51,6 +69,26 @@
         };
       },
       methods: {
+        async addToCart(productId) {
+          try {
+            const res = await fetch('http://127.0.0.1:5000/api/cart', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ product_id: productId, quantity: 1 })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+              alert('Added to cart!');
+            } else {
+              alert(data.error || 'Error adding to cart');
+            }
+          } catch (err) {
+            console.error('Cart error:', err);
+            alert('Failed to add to cart');
+          }
+        },
         async fetchProducts() {
           try {
             const params = new URLSearchParams();
@@ -73,9 +111,20 @@
             console.error('Error fetching categories:', err);
           }
         },
+        goToCart() {
+          window.location.href = 'cart.html';
+        },
+        previous_purchase() {
+          window.location.href = 'previous-purchase.html';
+        },
+        goToDashboard() {
+          window.location.href = 'user-dashboard.html';
+        },
         goToAdd() {
-          alert("Redirect to Add Product Page");
-          // window.location.href = '/add-product.html';
+          window.location.href = 'add-product.html';
+        },
+        goToMyListings() {
+          window.location.href = 'my-listings.html';
         }
       },
       mounted() {

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EcoFinds - Previous Purchases</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <div id="app" class="max-w-6xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-green-600">Previous Purchases</h1>
+      <a href="products.html" class="text-green-600 underline text-sm">← Back to Products</a>
+    </header>
+
+    <!-- Purchase List -->
+    <div v-if="purchases.length">
+      <div v-for="purchase in purchases" :key="purchase.id" class="bg-white p-6 rounded shadow mb-6">
+        <h2 class="text-lg font-semibold text-gray-700 mb-2">Purchase ID: {{ purchase.id }}</h2>
+        <p class="text-sm text-gray-500 mb-4">Date: {{ formatDate(purchase.purchase_date) }}</p>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="item in purchase.items" :key="item.product_id" class="border p-4 rounded">
+            <img :src="item.product.image_url || '/placeholder.svg'" class="w-full h-32 object-cover rounded mb-2" />
+            <h3 class="font-semibold">{{ item.product.title }}</h3>
+            <p class="text-sm text-gray-600">Qty: {{ item.quantity }}</p>
+            <p class="text-green-700 font-bold mt-1">₹{{ item.price_at_purchase }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-else class="text-gray-500">No previous purchases yet.</div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          purchases: []
+        };
+      },
+      methods: {
+        async fetchPurchases() {
+          try {
+            const res = await fetch('http://127.0.0.1:5000/api/purchases', {
+              credentials: 'include'
+            });
+            const data = await res.json();
+            this.purchases = (data.purchases || []).map(p => {
+              return {
+                ...p,
+                items: p.items.map(i => {
+                  return {
+                    ...i,
+                    product: i.product || {}
+                  };
+                })
+              };
+            });
+          } catch (err) {
+            console.error('Error fetching purchases:', err);
+          }
+        },
+        formatDate(dateString) {
+          return new Date(dateString).toLocaleString();
+        }
+      },
+      mounted() {
+        this.fetchPurchases();
+      }
+    }).mount('#app');
+  </script>
+
+</body>
+</html>
