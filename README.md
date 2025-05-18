@@ -71,13 +71,8 @@
     By clicking GO Live
     ```
 
-3. Start the Vue development server:
 
-    ```bash
-    npm run serve
-    ```
-
-Open your browser and visit:  http://localhost:8080
+Open your browser and visit:  http://localhost:5500
 
 ---
 
