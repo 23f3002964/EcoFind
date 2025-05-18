@@ -79,6 +79,7 @@ Open your browser and visit:  http://localhost:5500
 ## 📸 Screenshots/ Video explain as working site 
 
 > *(https://drive.google.com/file/d/16EgGOiX6Iv6Er267ZwXWqtfSchsFqOFv/view?usp=drive_link)*
+> *(https://drive.google.com/file/d/16EgGOiX6Iv6Er267ZwXWqtfSchsFqOFv/view?usp=drive_link)*
 
 ---
 
