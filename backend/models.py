@@ -91,6 +91,7 @@ class Product(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'is_sold': self.is_sold,
             'seller_id': self.seller_id,
+            'seller_username': self.seller.username if self.seller else None, # Added seller_username
             'category_id': self.category_id,
             'category_name': self.category.name if self.category else None
         }

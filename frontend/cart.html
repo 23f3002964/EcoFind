@@ -5,74 +5,149 @@
   <title>EcoFinds - Cart</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/frontend/static/js/utils.js"></script> <!-- Added global utils script -->
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-  <div id="app" class="max-w-5xl mx-auto px-4 py-6">
-    <!-- Header -->
-    <header class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-green-600">EcoFinds</h1>
-      <a href="products.html" class="text-green-600 underline text-sm">← Back to Products</a>
-    </header>
+<header class="bg-white shadow-sm py-4 px-4 md:px-6">
+    <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+        <!-- Logo -->
+        <div class="flex items-center">
+            <a href="/frontend/products.html">
+                <img src="/frontend/logo.png" alt="EcoFinds Logo" class="h-10 md:h-12 w-auto">
+            </a>
+        </div>
 
+        <!-- Navigation Links -->
+        <nav class="flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-2">
+            <a href="/frontend/products.html" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Products</a>
+            <a href="/frontend/my-listings.html" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">My Listings</a>
+            <a href="/frontend/cart.html" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Cart</a>
+            <a href="/frontend/user-dashboard.html" class="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Profile</a>
+        </nav>
+
+        <!-- Logout Button -->
+        <div>
+            <button onclick="performLogout()" class="bg-red-500 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                Logout
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Global Logout Script -->
+<script>
+    async function performLogout() {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (response.ok) {
+                window.location.href = '/frontend/login.html';
+            } else {
+                const data = await response.json();
+            showGlobalToast(data.message || 'Logout failed. Please try again.', true);
+                console.error('Logout failed:', data);
+            }
+        } catch (error) {
+        showGlobalToast('An error occurred during logout. Please check your connection and try again.', true);
+            console.error('Error during logout:', error);
+        }
+    }
+</script>
+
+  <!-- Standardized Loading Indicator for initial cart load -->
+  <div v-if="loadingInitial" class="fixed inset-0 bg-gray-100 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="flex items-center justify-center p-6 rounded-lg space-x-3">
+        <svg class="animate-spin h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-xl text-gray-700">Loading Cart...</span>
+    </div>
+  </div>
+
+  <div id="app" class="max-w-5xl mx-auto px-4 py-6 pt-12"> <!-- Added pt-12 for spacing -->
     <!-- Cart Items -->
-    <h2 class="text-xl font-bold mb-4">Your Cart</h2>
-    <div v-if="cartItems.length">
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
-        <div v-for="item in cartItems" :key="item.id" class="bg-white rounded shadow p-4">
-          <img :src="item.product.image_url || '/placeholder.svg'" class="w-full h-40 object-cover rounded mb-2">
-          <h3 class="text-lg font-semibold">{{ item.product.title }}</h3>
-          <p class="text-gray-600">Qty: {{ item.quantity }}</p>
-          <p class="text-green-700 font-bold mt-1">₹{{ item.product.price }}</p>
-          <button @click="removeItem(item.id)" class="mt-3 text-sm text-red-600 underline">Remove</button>
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Your Cart</h2>
+    <div v-if="cartItems.length > 0">
+      <div class="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div v-for="item in cartItems" :key="item.id" class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
+          <img :src="item.product.image_url || '/frontend/placeholder.svg'" class="w-full h-48 object-cover" :alt="item.product.title">
+          <div class="p-4 flex flex-col flex-grow">
+            <h3 class="text-lg font-semibold text-gray-800 mb-1 line-clamp-2">{{ item.product.title }}</h3>
+            <p class="text-sm text-gray-600 mb-1">Quantity: {{ item.quantity }}</p>
+            <p class="text-green-600 font-bold text-xl mt-auto">₹{{ item.product.price }}</p>
+          </div>
+          <div class="p-4 border-t border-gray-100">
+            <button @click="removeItem(item.id)" class="w-full py-2 px-3 text-sm font-medium text-red-600 border border-red-300 rounded-md hover:bg-red-50 hover:text-red-700 transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1">
+              Remove
+            </button>
+          </div>
         </div>
       </div>
       
       <!-- Cart Summary and Checkout -->
-      <div class="bg-white rounded shadow p-4 mt-4">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold">Cart Summary</h3>
-          <p class="text-green-700 font-bold">Total: ₹{{ cartTotal }}</p>
+      <div class="bg-white rounded-lg shadow-xl p-6 sticky bottom-0">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="text-xl font-semibold text-gray-800">Cart Summary</h3>
+          <p class="text-green-600 font-bold text-2xl">Total: ₹{{ cartTotal }}</p>
         </div>
         <button 
           @click="checkout" 
-          class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-200"
-          :disabled="isProcessing"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 ease-in-out text-lg"
+          :disabled="isProcessing || cartItems.length === 0"
+          :class="{'opacity-50 cursor-not-allowed': isProcessing || cartItems.length === 0}"
         >
-          {{ isProcessing ? 'Processing...' : 'Checkout' }}
+          {{ isProcessing ? 'Processing...' : 'Proceed to Checkout' }}
         </button>
       </div>
     </div>
 
-    <div v-else class="text-gray-500 p-8 text-center">
-      <p class="mb-4">Your cart is empty.</p>
-      <a href="products.html" class="text-green-600 underline">Browse Products</a>
+    <div v-else class="text-center py-16 bg-white rounded-lg shadow-md">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+        </svg>
+      <p class="text-gray-700 text-2xl font-semibold mb-2">Your Cart is Empty</p>
+      <p class="text-gray-500 mb-6">Looks like you haven't added anything to your cart yet.</p>
+      <a href="/frontend/products.html" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 ease-in-out">
+        Browse Products
+      </a>
     </div>
     
-    <!-- Success Message -->
-    <div v-if="showSuccessMessage" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md">
-        <h3 class="text-xl font-bold text-green-600 mb-2">Purchase Successful!</h3>
-        <p class="mb-4">Your order has been placed successfully.</p>
-        <p class="mb-4 text-gray-700">Transaction ID: {{ transactionId }}</p>
-        <div class="flex justify-end">
-          <button @click="viewPurchases" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 mr-2">
+    <!-- Success Message Modal -->
+    <div v-if="showSuccessMessage" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div class="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-500 mx-auto mb-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 class="text-2xl font-bold text-gray-800 mb-3">Purchase Successful!</h3>
+        <p class="text-gray-600 mb-3">Your order has been placed and is being processed.</p>
+        <p class="text-gray-700 mb-6"><span class="font-semibold">Transaction ID:</span> {{ transactionId }}</p>
+        <div class="flex flex-col sm:flex-row justify-center gap-3">
+          <button @click="viewPurchases" class="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-5 rounded-lg transition-colors duration-150 ease-in-out">
             View Purchases
           </button>
-          <button @click="continueShopping" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          <button @click="continueShopping" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out">
             Continue Shopping
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Error Message -->
-    <div v-if="errorMessage" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md">
-        <h3 class="text-xl font-bold text-red-600 mb-2">Error</h3>
-        <p class="mb-4">{{ errorMessage }}</p>
-        <div class="flex justify-end">
-          <button @click="errorMessage = ''" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+    <!-- Error Message Modal -->
+    <div v-if="errorMessage" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div class="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full text-center">
+         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500 mx-auto mb-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 class="text-2xl font-bold text-gray-800 mb-3">Oops! Something went wrong.</h3>
+        <p class="text-gray-600 mb-6">{{ errorMessage }}</p>
+        <div class="flex justify-center">
+          <button @click="errorMessage = ''" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out">
             Close
           </button>
         </div>
@@ -86,9 +161,10 @@
       data() {
         return {
           cartItems: [],
-          isProcessing: false,
+          isProcessing: false, // For checkout button state
+          loadingInitial: true, // For initial cart load
           showSuccessMessage: false,
-          errorMessage: '',
+          errorMessage: '', // For modal error display
           transactionId: ''
         };
       },
@@ -119,11 +195,15 @@
             this.cartItems = data.cart_items || [];
           } catch (err) {
             console.error('Failed to fetch cart', err);
-            this.errorMessage = 'Failed to load your cart. Please try again.';
+            // Use global toast for general fetch errors, modal can be for specific checkout errors
+            showGlobalToast('Failed to load your cart. Please try refreshing.', true);
+          } finally {
+            this.loadingInitial = false;
           }
         },
         
         async removeItem(cartItemId) {
+          // Consider adding a specific loading state for item removal if it's slow
           try {
             const res = await fetch(`http://127.0.0.1:5000/api/cart/${cartItemId}`, {
               method: 'DELETE',
@@ -132,22 +212,24 @@
             
             if (res.ok) {
               this.cartItems = this.cartItems.filter(item => item.id !== cartItemId);
+              showGlobalToast('Item removed from cart.', false);
             } else {
-              throw new Error('Failed to remove item');
+                const data = await res.json();
+                showGlobalToast(data.error || 'Failed to remove item from cart.', true);
             }
           } catch (err) {
             console.error('Failed to delete item', err);
-            this.errorMessage = 'Failed to remove item from cart. Please try again.';
+            showGlobalToast('A network error occurred. Failed to remove item.', true);
           }
         },
         
         async checkout() {
           if (this.cartItems.length === 0) {
-            this.errorMessage = 'Your cart is empty. Add items before checking out.';
+            showGlobalToast('Your cart is empty. Add items before checking out.', true); // Use toast for this validation
             return;
           }
           
-          this.isProcessing = true;
+          this.isProcessing = true; // This is for the button's disabled state and text
           
           try {
             const res = await fetch('http://127.0.0.1:5000/api/purchases', {
@@ -156,23 +238,21 @@
               headers: {
                 'Content-Type': 'application/json'
               }
+              // body: JSON.stringify({}) // No body needed if API creates purchase from cart
             });
             
             const data = await res.json();
             
             if (res.ok) {
-              // Store transaction ID for display
               this.transactionId = data.purchase.transaction_id;
-              
-              // Clear cart after successful purchase
-              this.cartItems = [];
-              this.showSuccessMessage = true;
+              this.cartItems = []; // Clear cart
+              this.showSuccessMessage = true; // Show success modal
             } else {
-              throw new Error(data.error || 'Checkout failed');
+              this.errorMessage = data.error || 'Checkout failed. Please try again.'; // Show error modal
             }
           } catch (err) {
             console.error('Failed to complete checkout', err);
-            this.errorMessage = err.message || 'Failed to complete checkout. Please try again.';
+            this.errorMessage = 'A network error occurred. Failed to complete checkout.'; // Show error modal
           } finally {
             this.isProcessing = false;
           }

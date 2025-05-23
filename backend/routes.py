@@ -1,6 +1,7 @@
 # routes.py
 from flask import request, jsonify,render_template
 from flask_login import login_required, current_user, login_user, logout_user, login_manager
+from werkzeug.exceptions import NotFound # Added for specific 404 handling
 from models import User, Category, Product, CartItem, Purchase, PurchaseItem
 from app import db
 from extensions import login_manager
@@ -40,7 +41,8 @@ def register_routes(app):
             return jsonify({'message': 'User registered successfully', 'user': user.to_dict()}), 201
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging in a real app: app.logger.error(f"Registration error: {e}")
+            return jsonify({'error': 'An internal server error occurred during registration.'}), 500
     
 
     # ------------------------------- login routes ------------------------------- #
@@ -58,7 +60,8 @@ def register_routes(app):
             login_user(user, remember=True)
             return jsonify({'message': 'Login successful', 'user': user.to_dict()}), 200
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging in a real app: app.logger.error(f"Login error: {e}")
+            return jsonify({'error': 'An internal server error occurred during login.'}), 500
     
 
     # ------------------------------- logout route ------------------------------- #
@@ -69,7 +72,8 @@ def register_routes(app):
             logout_user()
             return jsonify({'message': 'Logout successful'}), 200
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging in a real app: app.logger.error(f"Logout error: {e}")
+            return jsonify({'error': 'An internal server error occurred during logout.'}), 500
     
     @app.route('/api/user', methods=['GET'])
     @login_required
@@ -77,7 +81,8 @@ def register_routes(app):
         try:
             return jsonify({'user': current_user.to_dict()}), 200
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging in a real app: app.logger.error(f"Get current user error: {e}")
+            return jsonify({'error': 'An internal server error occurred.'}), 500
         
      
 
@@ -120,7 +125,8 @@ def register_routes(app):
             return jsonify({'message': 'Profile updated successfully', 'user': user.to_dict()}), 200
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging in a real app: app.logger.error(f"Update profile error: {e}")
+            return jsonify({'error': 'An internal server error occurred while updating profile.'}), 500
         
 
 
@@ -147,7 +153,8 @@ def register_routes(app):
             products = query.all()
             return jsonify({'products': [product.to_dict() for product in products]}), 200
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging in a real app: app.logger.error(f"Get products error: {e}")
+            return jsonify({'error': 'An internal server error occurred while fetching products.'}), 500
     
 
     @app.route('/api/products/<int:product_id>', methods=['GET'])
@@ -155,8 +162,11 @@ def register_routes(app):
         try:
             product = Product.query.get_or_404(product_id)
             return jsonify({'product': product.to_dict()}), 200
+        except NotFound:
+            return jsonify({'error': f'Product with id {product_id} not found'}), 404
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging in a real app: app.logger.error(f"Get product {product_id} error: {e}")
+            return jsonify({'error': 'An internal server error occurred.'}), 500
     
     @app.route('/api/products', methods=['POST'])
     @login_required
@@ -189,17 +199,20 @@ def register_routes(app):
             return jsonify({'message': 'Product created successfully', 'product': product.to_dict()}), 201
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging in a real app: app.logger.error(f"Create product error: {e}")
+            return jsonify({'error': 'An internal server error occurred while creating product.'}), 500
     
     @app.route('/api/products/<int:product_id>', methods=['PUT'])
     @login_required
     def update_product(product_id):
         try:
-            product = Product.query.get_or_404(product_id)
+            product = Product.query.filter_by(id=product_id, seller_id=current_user.id).first()
+            if not product:
+                # Check if product exists at all to differentiate 404 from 403
+                if not Product.query.get(product_id):
+                    return jsonify({'error': f'Product with id {product_id} not found.'}), 404
+                return jsonify({'error': 'Unauthorized or product not found.'}), 403 # User doesn't own it or it doesn't exist for them
             
-            # Check if user is the seller
-            if product.seller_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to edit this product'}), 403
             
             data = request.get_json()
             
@@ -221,27 +234,34 @@ def register_routes(app):
             
             db.session.commit()
             return jsonify({'message': 'Product updated successfully', 'product': product.to_dict()}), 200
+        except NotFound: # Should not be strictly necessary due to the check above, but as a safeguard
+            return jsonify({'error': f'Product with id {product_id} not found.'}), 404
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Update product {product_id} error: {e}")
+            return jsonify({'error': 'An internal server error occurred while updating product.'}), 500
     
     @app.route('/api/products/<int:product_id>', methods=['DELETE'])
     @login_required
     def delete_product(product_id):
         try:
-            product = Product.query.get_or_404(product_id)
-            
-            # Check if user is the seller
-            if product.seller_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to delete this product'}), 403
-            
+            product = Product.query.filter_by(id=product_id, seller_id=current_user.id).first()
+            if not product:
+                # Check if product exists at all to differentiate 404 from 403
+                if not Product.query.get(product_id):
+                    return jsonify({'error': f'Product with id {product_id} not found.'}), 404
+                return jsonify({'error': 'Unauthorized or product not found.'}), 403 # User doesn't own it or it doesn't exist for them
+
             db.session.delete(product)
             db.session.commit()
             
             return jsonify({'message': 'Product deleted successfully'}), 200
+        except NotFound: # Should not be strictly necessary
+            return jsonify({'error': f'Product with id {product_id} not found.'}), 404
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Delete product {product_id} error: {e}")
+            return jsonify({'error': 'An internal server error occurred while deleting product.'}), 500
     
     @app.route('/api/user/products', methods=['GET'])
     @login_required
@@ -250,7 +270,8 @@ def register_routes(app):
             products = Product.query.filter_by(seller_id=current_user.id).all()
             return jsonify({'products': [product.to_dict() for product in products]}), 200
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Get user products error: {e}")
+            return jsonify({'error': 'An internal server error occurred.'}), 500
 
 
 
@@ -261,7 +282,8 @@ def register_routes(app):
             categories = Category.query.all()
             return jsonify({'categories': [category.to_dict() for category in categories]}), 200
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Get categories error: {e}")
+            return jsonify({'error': 'An internal server error occurred while fetching categories.'}), 500
     
     @app.route('/api/categories', methods=['POST'])
     @login_required
@@ -286,7 +308,8 @@ def register_routes(app):
             return jsonify({'message': 'Category created successfully', 'category': category.to_dict()}), 201
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Create category error: {e}")
+            return jsonify({'error': 'An internal server error occurred while creating category.'}), 500
 
     
 
@@ -298,7 +321,8 @@ def register_routes(app):
             cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
             return jsonify({'cart_items': [item.to_dict() for item in cart_items]}), 200
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Get cart error: {e}")
+            return jsonify({'error': 'An internal server error occurred while fetching cart.'}), 500
     
     @app.route('/api/cart', methods=['POST'])
     @login_required
@@ -309,7 +333,11 @@ def register_routes(app):
             if not data or not data.get('product_id'):
                 return jsonify({'error': 'Product ID is required'}), 400
             
-            product = Product.query.get_or_404(data['product_id'])
+            product_id = data['product_id']
+            product = Product.query.get(product_id) # Changed from get_or_404 to handle manually
+
+            if not product:
+                return jsonify({'error': f'Product with id {product_id} not found.'}), 404
             
             # Check if product is already sold
             if product.is_sold:
@@ -333,20 +361,24 @@ def register_routes(app):
             
             db.session.commit()
             return jsonify({'message': 'Product added to cart successfully'}), 201
+        except NotFound: # This case should be handled by the explicit check above
+            return jsonify({'error': 'Product not found.'}), 404
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Add to cart error: {e}")
+            return jsonify({'error': 'An internal server error occurred while adding to cart.'}), 500
     
     @app.route('/api/cart/<int:cart_item_id>', methods=['PUT'])
     @login_required
     def update_cart_item(cart_item_id):
         try:
-            cart_item = CartItem.query.get_or_404(cart_item_id)
-            
-            # Check if user owns this cart item
-            if cart_item.user_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to modify this cart item'}), 403
-            
+            cart_item = CartItem.query.filter_by(id=cart_item_id, user_id=current_user.id).first()
+            if not cart_item:
+                # Check if cart item exists at all to differentiate 404 from 403
+                if not CartItem.query.get(cart_item_id):
+                    return jsonify({'error': f'Cart item with id {cart_item_id} not found.'}), 404
+                return jsonify({'error': 'Unauthorized or cart item not found.'}), 403
+
             data = request.get_json()
             
             if 'quantity' in data:
@@ -357,27 +389,36 @@ def register_routes(app):
             
             db.session.commit()
             return jsonify({'message': 'Cart item updated successfully'}), 200
+        except NotFound: # Should not be strictly necessary
+            return jsonify({'error': f'Cart item with id {cart_item_id} not found.'}), 404
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Update cart item {cart_item_id} error: {e}")
+            return jsonify({'error': 'An internal server error occurred while updating cart item.'}), 500
     
     @app.route('/api/cart/<int:cart_item_id>', methods=['DELETE'])
     @login_required
     def remove_from_cart(cart_item_id):
         try:
-            cart_item = CartItem.query.get_or_404(cart_item_id)
-            
-            # Check if user owns this cart item
-            if cart_item.user_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to delete this cart item'}), 403
+            cart_item = CartItem.query.filter_by(id=cart_item_id, user_id=current_user.id).first()
+            if not cart_item:
+                # Check if cart item exists at all to differentiate 404 from 403
+                if not CartItem.query.get(cart_item_id):
+                    return jsonify({'error': f'Cart item with id {cart_item_id} not found.'}), 404
+                return jsonify({'error': 'Unauthorized or cart item not found.'}), 403
             
             db.session.delete(cart_item)
             db.session.commit()
             
             return jsonify({'message': 'Item removed from cart successfully'}), 200
+        except NotFound: # Should not be strictly necessary
+            return jsonify({'error': f'Cart item with id {cart_item_id} not found.'}), 404
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Remove from cart {cart_item_id} error: {e}")
+            return jsonify({'error': 'An internal server error occurred while removing from cart.'}), 500
+            # Log e for debugging: app.logger.error(f"Create purchase error: {e}")
+            return jsonify({'error': 'An internal server error occurred during purchase.'}), 500
         
 
     # ------------------------------ Purchase Routes ----------------------------- #
@@ -436,21 +477,26 @@ def register_routes(app):
             purchases = Purchase.query.filter_by(buyer_id=current_user.id).order_by(Purchase.purchase_date.desc()).all()
             return jsonify({'purchases': [purchase.to_dict() for purchase in purchases]}), 200
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Get user purchases error: {e}")
+            return jsonify({'error': 'An internal server error occurred.'}), 500
     
     @app.route('/api/purchases/<int:purchase_id>', methods=['GET'])
     @login_required
     def get_purchase(purchase_id):
         try:
-            purchase = Purchase.query.get_or_404(purchase_id)
-            
-            # Check if user is the buyer
-            if purchase.buyer_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to view this purchase'}), 403
-            
+            purchase = Purchase.query.filter_by(id=purchase_id, buyer_id=current_user.id).first()
+            if not purchase:
+                 # Check if purchase exists at all to differentiate 404 from 403
+                if not Purchase.query.get(purchase_id):
+                    return jsonify({'error': f'Purchase with id {purchase_id} not found.'}), 404
+                return jsonify({'error': 'Unauthorized or purchase not found.'}), 403
+
             return jsonify({'purchase': purchase.to_dict()}), 200
+        except NotFound: # Should not be strictly necessary
+            return jsonify({'error': f'Purchase with id {purchase_id} not found.'}), 404
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            # Log e for debugging: app.logger.error(f"Get purchase {purchase_id} error: {e}")
+            return jsonify({'error': 'An internal server error occurred.'}), 500
 
     # ------------------------------- error handler ------------------------------ #
         # Error handlers

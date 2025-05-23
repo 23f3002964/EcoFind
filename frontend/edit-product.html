@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Add New Product - EcoFinds</title>
+  <title>Edit Product - EcoFinds</title> <!-- Changed Title -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/frontend/static/js/utils.js"></script> <!-- Added global utils script -->
@@ -70,13 +70,18 @@
     </div>
   </div>
 
-  <div id="app" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg mx-auto my-12"> <!-- Enhanced container styling -->
-    <!-- Back Button -->
-    <button @click="goBack" class="text-green-600 hover:underline mb-4">← Back</button>
+  <div id="app" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg mx-auto my-12">
+    <div class="flex justify-start mb-6">
+        <button @click="goBack" class="text-green-600 hover:text-green-800 font-medium transition-colors flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to My Listings
+        </button>
+    </div>
+    <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Edit Product</h2> <!-- Changed Heading -->
 
-    <h2 class="text-2xl font-bold text-green-600 mb-4">Add New Product</h2>
-
-    <form @submit.prevent="submitProduct" class="space-y-6">
+    <form @submit.prevent="updateProduct" class="space-y-6"> <!-- Changed submit handler -->
       <div>
         <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Product Title</label>
         <input id="title" v-model="title" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
@@ -108,9 +113,8 @@
       </div>
 
       <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 ease-in-out" :disabled="loading">
-        {{ loading ? 'Submitting...' : 'Submit Listing' }}
+        {{ loading ? 'Updating...' : 'Update Product' }} <!-- Changed Button Text -->
       </button>
-      <!-- Message display removed, will use global toast -->
     </form>
   </div>
 
@@ -120,19 +124,18 @@
     createApp({
       data() {
         return {
+          productId: null, // Added productId
           title: '',
           description: '',
           price: '',
           image_url: '',
           category_id: '',
           categories: [],
-          loading: false, // Added loading state
-          // message and success properties removed, will use toast
+          loading: false, 
         };
       },
       methods: {
         async fetchCategories() {
-          // Consider adding loading state for category fetch if it's slow
           try {
             const res = await fetch('http://127.0.0.1:5000/api/categories');
             const data = await res.json();
@@ -142,11 +145,44 @@
             showGlobalToast("Failed to load categories.", true);
           }
         },
-        async submitProduct() {
+        async fetchProductDetails() {
+          const urlParams = new URLSearchParams(window.location.search);
+          this.productId = urlParams.get('id');
+          if (!this.productId) {
+            showGlobalToast('No product ID specified for editing.', true);
+            this.goBack(); // Or redirect to a more appropriate page
+            return;
+          }
           this.loading = true;
           try {
-            const res = await fetch('http://127.0.0.1:5000/api/products', {
-              method: 'POST',
+            const res = await fetch(`http://127.0.0.1:5000/api/products/${this.productId}`);
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || `Failed to fetch product details (status: ${res.status})`);
+            }
+            const productData = await res.json();
+            this.title = productData.title;
+            this.description = productData.description;
+            this.price = productData.price;
+            this.image_url = productData.image_url;
+            this.category_id = productData.category_id;
+          } catch (err) {
+            console.error("Error fetching product details:", err);
+            showGlobalToast(err.message || 'Error loading product data.', true);
+            this.goBack(); // Go back if product can't be loaded
+          } finally {
+            this.loading = false;
+          }
+        },
+        async updateProduct() { // Renamed from submitProduct
+          if (!this.productId) {
+            showGlobalToast('Product ID is missing. Cannot update.', true);
+            return;
+          }
+          this.loading = true;
+          try {
+            const res = await fetch(`http://127.0.0.1:5000/api/products/${this.productId}`, { // Changed URL and added productId
+              method: 'PUT', // Changed method to PUT
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',  // for session auth
               body: JSON.stringify({
@@ -159,17 +195,12 @@
             });
             const data = await res.json();
             if (res.ok) {
-              showGlobalToast(data.message || 'Product added successfully!');
-              // Optional: Redirect to product listing or clear form
+              showGlobalToast(data.message || 'Product updated successfully!');
               setTimeout(() => {
-                if (window.location.search.includes('from=my-listings')) { // Check if redirected from my-listings
-                    window.location.href = 'my-listings.html';
-                } else {
-                    window.location.href = 'products.html';
-                }
-              }, 1500); // Redirect after toast is visible
+                window.location.href = '/frontend/my-listings.html'; // Redirect to my-listings
+              }, 1500);
             } else {
-              showGlobalToast(data.error || 'Failed to add product.', true);
+              showGlobalToast(data.error || 'Failed to update product.', true);
             }
           } catch (err) {
             showGlobalToast('A network error occurred. Please try again.', true);
@@ -178,11 +209,13 @@
           }
         },
         goBack() {
-          window.history.back();
+          // Navigate to my-listings.html as a sensible default if history is not ideal
+          window.location.href = '/frontend/my-listings.html';
         }
       },
       mounted() {
         this.fetchCategories();
+        this.fetchProductDetails(); // Fetch product details on mount
       }
     }).mount('#app');
   </script>
