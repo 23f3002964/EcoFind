@@ -5,55 +5,75 @@
   <title>EcoFinds Register</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/frontend/static/js/utils.js"></script> <!-- Added global utils script -->
 </head>
-<body class="bg-gray-100 flex justify-center items-center h-screen">
+<body class="bg-gray-100 flex flex-col justify-center items-center min-h-screen py-10 px-4">
 
-  <div id="app" class="bg-white p-8 rounded shadow-md w-[500px]">
-    <h2 class="text-2xl font-bold text-green-600 mb-4">Create Your Account</h2>
+  <!-- Standardized Loading Indicator -->
+  <div v-if="loading" class="fixed inset-0 bg-gray-100 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="flex items-center justify-center p-6 rounded-lg space-x-3">
+        <svg class="animate-spin h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-xl text-gray-700">Creating Account...</span>
+    </div>
+  </div>
 
-    <form @submit.prevent="register">
-      <div class="grid grid-cols-2 gap-4">
+  <div id="app" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl"> <!-- Adjusted width -->
+    <div class="text-center mb-8">
+        <img src="/frontend/logo.png" alt="EcoFinds Logo" class="h-16 mx-auto mb-4">
+        <h2 class="text-3xl font-bold text-gray-800">Create Your EcoFinds Account</h2>
+    </div>
+
+    <form @submit.prevent="register" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label class="text-sm text-gray-700">First Name</label>
-          <input v-model="first_name" class="w-full px-3 py-2 border rounded" />
+          <label for="first_name" class="block mb-1 text-sm font-medium text-gray-700">First Name</label>
+          <input id="first_name" v-model="first_name" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="John">
         </div>
         <div>
-          <label class="text-sm text-gray-700">Last Name</label>
-          <input v-model="last_name" class="w-full px-3 py-2 border rounded" />
+          <label for="last_name" class="block mb-1 text-sm font-medium text-gray-700">Last Name</label>
+          <input id="last_name" v-model="last_name" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Doe">
         </div>
       </div>
 
-      <div class="mt-4">
-        <label class="text-sm text-gray-700">Username</label>
-        <input v-model="username" class="w-full px-3 py-2 border rounded" required />
+      <div>
+        <label for="username" class="block mb-1 text-sm font-medium text-gray-700">Username</label>
+        <input id="username" v-model="username" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" required placeholder="johndoe">
       </div>
 
-      <div class="mt-4">
-        <label class="text-sm text-gray-700">Email</label>
-        <input type="email" v-model="email" class="w-full px-3 py-2 border rounded" required />
+      <div>
+        <label for="email" class="block mb-1 text-sm font-medium text-gray-700">Email Address</label>
+        <input id="email" type="email" v-model="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" required placeholder="you@example.com">
       </div>
 
-      <div class="mt-4">
-        <label class="text-sm text-gray-700">Password</label>
-        <input type="password" v-model="password" class="w-full px-3 py-2 border rounded" required />
+      <div>
+        <label for="password" class="block mb-1 text-sm font-medium text-gray-700">Password</label>
+        <input id="password" type="password" v-model="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" required placeholder="••••••••">
       </div>
 
-      <div class="mt-4">
-        <label class="text-sm text-gray-700">Phone</label>
-        <input v-model="phone_number" class="w-full px-3 py-2 border rounded" />
+      <div>
+        <label for="phone_number" class="block mb-1 text-sm font-medium text-gray-700">Phone Number (Optional)</label>
+        <input id="phone_number" v-model="phone_number" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="+1234567890">
       </div>
 
-      <div class="mt-4">
-        <label class="text-sm text-gray-700">Address</label>
-        <input v-model="address" class="w-full px-3 py-2 border rounded" />
+      <div>
+        <label for="address" class="block mb-1 text-sm font-medium text-gray-700">Address (Optional)</label>
+        <input id="address" v-model="address" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="123 Green St, Eco City">
       </div>
 
-      <button type="submit" class="mt-6 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-        Register
+      <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 ease-in-out text-lg" :disabled="loading">
+        {{ loading ? 'Registering...' : 'Create Account' }}
       </button>
     </form>
-
-    <p v-if="message" :class="success ? 'text-green-600' : 'text-red-600'" class="mt-4">{{ message }}</p>
+    <!-- Message display removed, will use global toast -->
+    <p class="mt-6 text-center text-sm text-gray-600">
+      Already have an account? 
+      <a href="/frontend/login.html" class="font-medium text-green-600 hover:text-green-500 transition-colors">
+        Login here
+      </a>
+    </p>
   </div>
 
   <script>
@@ -69,12 +89,13 @@
           last_name: '',
           phone_number: '',
           address: '',
-          message: '',
-          success: false
+          loading: false,
+          // message and success properties removed
         }
       },
       methods: {
         async register() {
+          this.loading = true;
           try {
             const res = await fetch('http://127.0.0.1:5000/api/register', {
               method: 'POST',
@@ -92,16 +113,18 @@
             });
 
             const data = await res.json();
-            this.success = res.ok;
-            this.message = data.message || data.error;
-
             if (res.ok) {
-              // Optional: redirect to login.html
-              window.location.href = 'login.html';
+              showGlobalToast(data.message || 'Registration successful! Please login.', false);
+              setTimeout(() => {
+                window.location.href = '/frontend/login.html';
+              }, 2000); // Redirect after toast
+            } else {
+              showGlobalToast(data.error || 'Registration failed. Please check your input.', true);
             }
           } catch (err) {
-            this.success = false;
-            this.message = 'Network error. Try again.';
+            showGlobalToast('A network error occurred. Please try again.', true);
+          } finally {
+            this.loading = false;
           }
         }
       }
