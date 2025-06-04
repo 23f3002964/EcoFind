@@ -195,26 +195,27 @@ def reset_password():
 
 # ============= USER PROFILE MANAGEMENT =============
 
-# @app.route('/api/profile/<int:id>', methods=['GET'])
-# @auth_required()
-# def get_profile(id):
-#     id = id
-#     user = UserDetail.query.filter_by(user_id = id).first_or_404()
+@app.route('/api/profile/<int:id>', methods=['GET'])
+@auth_required()
+def get_profile(id):
+    id = id
+    user = UserDetail.query.filter_by(user_id = id).first_or_404()
 
-#     return jsonify({
-#             'last_name': user.last_name if user else None,
-#             'phone_number': user.phone_number if user else None,
-#             'address': user.address if user else None,
-#             'dob': user.dob.isoformat() if user and user.dob else None,
-#             'bio': user.bio if user else None,
-#             'gender': user.gender if user else None
-#     }), 200
+    return jsonify({
+            'first_name' : user.first_name if user else None,
+            'last_name': user.last_name if user else None,
+            'phone_number': user.phone_number if user else None,
+            'address': user.address if user else None,
+            'dob': user.dob.isoformat() if user and user.dob else None,
+            'bio': user.bio if user else None,
+            'gender': user.gender if user else None
+    }), 200
 
 @app.route('/api/profile/<int:id>', methods=['PUT'])
 @auth_required()
 def update_profile(id):
     # Get the user to be updated using the ID from the URL
-    target_user = User.query.filter_by(user_id = id).first_or_404()
+    user_detail = UserDetail.query.filter_by(user_id = id).first_or_404()
     
     data = request.get_json()
     
@@ -223,33 +224,7 @@ def update_profile(id):
     
     try:
         # Update user fields
-        if 'username' in data:
-            # Check if username is taken by another user
-            existing_user = User.query.filter(
-                User.username == data['username'], 
-                User.id != target_user.id
-            ).first()
-            if existing_user:
-                return jsonify({'error': 'Username already taken'}), 400
-            target_user.username = data['username']
-        
-        
-        if 'preferred_language' in data:
-            valid_languages = ['en', 'hi', 'gu']
-            if data['preferred_language'] not in valid_languages:
-                return jsonify({'error': f'Invalid language. Must be one of: {valid_languages}'}), 400
-            target_user.preferred_language = data['preferred_language']
-        
-        if 'active' in data:
-            target_user.active = data['active']
-        
-        # Update user detail fields
-        user_detail = target_user.user_detail
-        if not user_detail:
-            user_detail = UserDetail(user_id=target_user.id)
-            db.session.add(user_detail)
-            target_user.user_detail = user_detail
-        
+
         if 'first_name' in data:
             if not data['first_name'].strip():
                 return jsonify({'error': 'First name cannot be empty'}), 400
@@ -305,14 +280,6 @@ def update_profile(id):
         return jsonify({
             'message': 'Profile updated successfully',
             'user': {
-                'id': target_user.id,
-                'username': target_user.username,
-                'email': target_user.email,
-                'preferred_language': target_user.preferred_language,
-                'active': target_user.active,
-                'rating': target_user.rating,
-                'total_reviews': target_user.total_reviews,
-                'user_detail': {
                     'first_name': user_detail.first_name,
                     'last_name': user_detail.last_name,
                     'phone_number': user_detail.phone_number,
@@ -321,7 +288,6 @@ def update_profile(id):
                     'bio': user_detail.bio,
                     'gender': user_detail.gender,
                     'updated_at': user_detail.updated_at.isoformat()
-                }
             }
         }), 200
         
@@ -998,12 +964,13 @@ def send_message():
 
 @app.route('/api/reviews', methods=['POST'])
 @auth_required()
-def create_review():
+def create_review(id):
+    user = User.query.filter_by(user_id = id).first_or_404()
     data = request.get_json()
     
     # Check if user has purchased from this seller
     purchase = Purchase.query.filter_by(
-        buyer_id=current_user.id,
+        buyer_id=user.id,
         seller_id=data['reviewee_id'],
         status='completed'
     ).first()
