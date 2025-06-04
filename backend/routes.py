@@ -1,484 +1,185 @@
-# routes.py
-from flask import request, jsonify,render_template
-from flask_login import login_required, current_user, login_user, logout_user, login_manager
-from models import User, Category, Product, CartItem, Purchase, PurchaseItem
-from app import db
-from extensions import login_manager
+from flask import current_app as app, request, jsonify, make_response
+from flask_security import auth_required, hash_password, verify_password
+from flask_security.recoverable import reset_password_token_status, send_reset_password_instructions
+from backend.models import *
+from flask_mail import Message, Mail
 
-def register_routes(app):
-    # Now use app inside this function
+datastore = app.security.datastore
+mail = Mail()
+
+@app.route("/protected", methods=['POST'])
+@auth_required()
+def protected():
+    return "Protected Route"
+
+@app.route('/', methods=['GET'])
+def home():
+    return "<h3> Backend App or Api app Running Fine.</h3>"
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+
+    email = data.get('email').strip()
+    password = data.get('password').strip()
+
+    if not email or not password:
+        return jsonify({"message": "Invalid input"}), 404
+
+    user = datastore.find_user(email=email)
     
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    if verify_password(password, user.password):
+        return jsonify({"token": user.get_auth_token(), "email": user.email, "role": user.roles[0].name, "id": user.id}), 200
     
-    # Authentication Routes
-    @app.route('/api/register', methods=['POST'])
-    def register():
-        try:
-            data = request.get_json()
-            if not data or not data.get('email') or not data.get('password') or not data.get('username'):
-                return jsonify({'error': 'Email, username and password are required'}), 400
+    return jsonify({"message": "Incorrect Password"}), 401
+
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+
+    email = data.get('email')
+    f_name = data.get('first_name')
+    l_name = data.get('last_name', None)
+    gender = data.get('gender', None)
+    dob = data.get('dob')
+    bio = data.get('bio', None)
+    password = data.get('password')
+    confirm_password = data.get('confirm_password')
+
+    missing_fields = []
+    if not email:
+        missing_fields.append("email")
+    if not f_name:
+        missing_fields.append("first_name")
+    if not dob:
+         missing_fields.append("dob")
+    if not password:
+        missing_fields.append("password")
+    if not confirm_password:
+        missing_fields.append("confirm_password")
+
+    if missing_fields:
+        return make_response(jsonify({
+            "status": "failure",
+            "message": "Missing required fields.",
+            "missing_fields": missing_fields,
+        }), 400)
+
+    # Parse date in dd-mm-yyyy format
+    try:
+        dob = datetime.strptime(data['dob'], '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use yyyy-mm-dd"}), 400
+
+
+    # Check if password and confirm password match
+    if password != confirm_password:
+        return make_response(jsonify({
+            "status": "failure",
+            "message": "Password and confirm password do not match.",
+        }), 400)
+
+    try:
+        if not datastore.find_user(email=email):
+            # Create the user
+            user = datastore.create_user(email=email, password=hash_password(password), roles=['User'])
             
-            if User.query.filter_by(email=data['email']).first():
-                return jsonify({'error': 'Email already registered'}), 409
-            if User.query.filter_by(username=data['username']).first():
-                return jsonify({'error': 'Username already taken'}), 409
-            
-            user = User(
-                email=data['email'],
-                username=data['username'],
-                first_name=data.get('first_name', ''),
-                last_name=data.get('last_name', ''),
-                phone_number=data.get('phone_number', ''),
-                address=data.get('address', '')
+            # Create and assign UserDetail
+            user.user_detail = UserDetail(
+                first_name=f_name,
+                last_name=l_name,
+                dob=dob,
+                bio=bio,
+                gender=gender
             )
-            user.set_password(data['password'])
             db.session.add(user)
-            db.session.commit()
-            
-            return jsonify({'message': 'User registered successfully', 'user': user.to_dict()}), 201
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+        else:
+            return jsonify({"message": "User Already Exists."}), 409
+        db.session.commit()
+        return jsonify({"message": "User Created."}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({"message":str(e)}), 500
+
+
+def send_reset_email(user):
+    token = user.get_reset_token()
+    user_detail = UserDetail.query.filter_by(user_id = user.id).first_or_404()
+    reset_url = f"http://192.168.29.7:8081/reset-password/{token}"
+    app_name = 'Stater App'
+    msg = Message('Reset Your Password',
+                  recipients=[user.email])
     
+    # 1. Plaintext version (always include)
+    msg.body = f'''
+    Hi {user_detail.first_name},
 
-    # ------------------------------- login routes ------------------------------- #
-    @app.route('/api/login', methods=['POST'])
-    def login():
-        try:
-            data = request.get_json()
-            if not data or not data.get('email') or not data.get('password'):
-                return jsonify({'error': 'Email and password are required'}), 400
-            
-            user = User.query.filter_by(email=data['email']).first()
-            if not user or not user.check_password(data['password']):
-                return jsonify({'error': 'Invalid email or password'}), 401
-            
-            login_user(user, remember=True)
-            return jsonify({'message': 'Login successful', 'user': user.to_dict()}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
+    You requested a password reset.
 
-    # ------------------------------- logout route ------------------------------- #
-    @app.route('/api/logout', methods=['GET','POST'])
-    @login_required
-    def logout():
-        try:
-            logout_user()
-            return jsonify({'message': 'Logout successful'}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/user', methods=['GET'])
-    @login_required
-    def get_current_user():
-        try:
-            return jsonify({'user': current_user.to_dict()}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-        
-     
+    Reset your password by clicking the link below:
+    {reset_url}
 
+    If you didn’t request this, ignore this email.
 
+    Thanks,
+    {app_name} Team
+    '''
 
-    # ---------------------------- User Profile Routes --------------------------- #
-    @app.route('/api/user/profile', methods=['PUT'])
-    @login_required
-    def update_profile():
-        try:
-            data = request.get_json()
-            user = current_user
-            
-            # Update user fields if provided
-            if data.get('username') and data['username'] != user.username:
-                if User.query.filter_by(username=data['username']).first():
-                    return jsonify({'error': 'Username already taken'}), 409
-                user.username = data['username']
-            
-            if data.get('email') and data['email'] != user.email:
-                if User.query.filter_by(email=data['email']).first():
-                    return jsonify({'error': 'Email already registered'}), 409
-                user.email = data['email']
-            
-            # Update optional fields
-            if 'first_name' in data:
-                user.first_name = data['first_name']
-            if 'last_name' in data:
-                user.last_name = data['last_name']
-            if 'phone_number' in data:
-                user.phone_number = data['phone_number']
-            if 'address' in data:
-                user.address = data['address']
-            
-            # Update password if provided
-            if data.get('password'):
-                user.set_password(data['password'])
-            
-            db.session.commit()
-            return jsonify({'message': 'Profile updated successfully', 'user': user.to_dict()}), 200
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-        
+    # HTML version with full name and button
+    msg.html = f'''
+    <div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #333;">Reset Your Password</h2>
+        <p style="color: #555;">
+            Hi {user_detail.first_name} {user_detail.last_name},<br><br>
+            We got a request to reset your {app_name} password.
+        </p>
+        <div style="margin: 30px 0;">
+            <a href="{reset_url}" style="background-color: #3897f0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-size: 16px;">
+                Reset Password
+            </a>
+        </div>
+        <p style="color: #999; font-size: 12px;">
+            If you didn’t request this, you can safely ignore this email.
+        </p>
+        <p style="color: #ccc; font-size: 11px; text-align: center; margin-top: 40px;">
+            © 2025 {app_name}
+        </p>
+    </div>
+    '''
+    mail.send(msg)
+
+@app.route('/forgot_password', methods=['POST'])
+def forgot_password():
+    data = request.get_json()
+    email = data.get('email')
+
+    if not email:
+        return jsonify({"msg": "Email required"}), 400
+
+    user = datastore.find_user(email=email)
+    if user:
+        send_reset_email(user)
+    return jsonify({"msg": "If registered, a reset link has been sent."}), 200
 
 
+@app.route('/reset_password', methods=['POST'])
+def reset_password():
+    data = request.get_json()
+    token = data.get('token')
+    password = data.get('password')
 
-    # ------------------------------ Product Routes ------------------------------ #
-    @app.route('/api/products', methods=['GET'])
-    def get_products():
-        try:
-            # Get query parameters for filtering
-            category_id = request.args.get('category_id', type=int)
-            search_query = request.args.get('q', '')
-            
-            # Start with base query
-            query = Product.query.filter_by(is_sold=False)
-            
-            # Apply filters if provided
-            if category_id:
-                query = query.filter_by(category_id=category_id)
-            
-            if search_query:
-                query = query.filter(Product.title.ilike(f'%{search_query}%'))
-            
-            # Execute query and return results
-            products = query.all()
-            return jsonify({'products': [product.to_dict() for product in products]}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
+    if not token or not password:
+        return jsonify({"msg": "Token and password required"}), 400
 
-    @app.route('/api/products/<int:product_id>', methods=['GET'])
-    def get_product(product_id):
-        try:
-            product = Product.query.get_or_404(product_id)
-            return jsonify({'product': product.to_dict()}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/products', methods=['POST'])
-    @login_required
-    def create_product():
-        try:
-            data = request.get_json()
-            
-            # Validate required fields
-            if not all(key in data for key in ['title', 'description', 'price', 'category_id']):
-                return jsonify({'error': 'Missing required fields'}), 400
-            
-            # Validate category exists
-            category = Category.query.get(data['category_id'])
-            if not category:
-                return jsonify({'error': 'Invalid category ID'}), 400
-            
-            # Create new product
-            product = Product(
-                title=data['title'],
-                description=data['description'],
-                price=float(data['price']),
-                image_url=data.get('image_url', ''),
-                seller_id=current_user.id,
-                category_id=data['category_id']
-            )
-            
-            db.session.add(product)
-            db.session.commit()
-            
-            return jsonify({'message': 'Product created successfully', 'product': product.to_dict()}), 201
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/products/<int:product_id>', methods=['PUT'])
-    @login_required
-    def update_product(product_id):
-        try:
-            product = Product.query.get_or_404(product_id)
-            
-            # Check if user is the seller
-            if product.seller_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to edit this product'}), 403
-            
-            data = request.get_json()
-            
-            # Update product fields if provided
-            if 'title' in data:
-                product.title = data['title']
-            if 'description' in data:
-                product.description = data['description']
-            if 'price' in data:
-                product.price = float(data['price'])
-            if 'image_url' in data:
-                product.image_url = data['image_url']
-            if 'category_id' in data:
-                # Validate category exists
-                category = Category.query.get(data['category_id'])
-                if not category:
-                    return jsonify({'error': 'Invalid category ID'}), 400
-                product.category_id = data['category_id']
-            
-            db.session.commit()
-            return jsonify({'message': 'Product updated successfully', 'product': product.to_dict()}), 200
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/products/<int:product_id>', methods=['DELETE'])
-    @login_required
-    def delete_product(product_id):
-        try:
-            product = Product.query.get_or_404(product_id)
-            
-            # Check if user is the seller
-            if product.seller_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to delete this product'}), 403
-            
-            db.session.delete(product)
-            db.session.commit()
-            
-            return jsonify({'message': 'Product deleted successfully'}), 200
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/user/products', methods=['GET'])
-    @login_required
-    def get_user_products():
-        try:
-            products = Product.query.filter_by(seller_id=current_user.id).all()
-            return jsonify({'products': [product.to_dict() for product in products]}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+    user = User.verify_reset_token(token)
+    if not user:
+        return jsonify({"msg": "Invalid or expired token"}), 400
 
+    user.password = hash_password(password)  # Make sure hash_password is imported
+    db.session.commit()
 
-
-    # ------------------------------ Category Routes ----------------------------- #
-    @app.route('/api/categories', methods=['GET'])
-    def get_categories():
-        try:
-            categories = Category.query.all()
-            return jsonify({'categories': [category.to_dict() for category in categories]}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/categories', methods=['POST'])
-    @login_required
-    def create_category():
-        try:
-            data = request.get_json()
-            
-            if not data or not data.get('name'):
-                return jsonify({'error': 'Category name is required'}), 400
-            
-            if Category.query.filter_by(name=data['name']).first():
-                return jsonify({'error': 'Category already exists'}), 409
-            
-            category = Category(
-                name=data['name'],
-                description=data.get('description', '')
-            )
-            
-            db.session.add(category)
-            db.session.commit()
-            
-            return jsonify({'message': 'Category created successfully', 'category': category.to_dict()}), 201
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-
-    
-
-    # -------------------------------- Cart Routes ------------------------------- #
-    @app.route('/api/cart', methods=['GET'])
-    @login_required
-    def get_cart():
-        try:
-            cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-            return jsonify({'cart_items': [item.to_dict() for item in cart_items]}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/cart', methods=['POST'])
-    @login_required
-    def add_to_cart():
-        try:
-            data = request.get_json()
-            
-            if not data or not data.get('product_id'):
-                return jsonify({'error': 'Product ID is required'}), 400
-            
-            product = Product.query.get_or_404(data['product_id'])
-            
-            # Check if product is already sold
-            if product.is_sold:
-                return jsonify({'error': 'Product is already sold'}), 400
-            
-            # Check if product is already in cart
-            existing_item = CartItem.query.filter_by(
-                user_id=current_user.id,
-                product_id=product.id
-            ).first()
-            
-            if existing_item:
-                existing_item.quantity += data.get('quantity', 1)
-            else:
-                cart_item = CartItem(
-                    user_id=current_user.id,
-                    product_id=product.id,
-                    quantity=data.get('quantity', 1)
-                )
-                db.session.add(cart_item)
-            
-            db.session.commit()
-            return jsonify({'message': 'Product added to cart successfully'}), 201
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/cart/<int:cart_item_id>', methods=['PUT'])
-    @login_required
-    def update_cart_item(cart_item_id):
-        try:
-            cart_item = CartItem.query.get_or_404(cart_item_id)
-            
-            # Check if user owns this cart item
-            if cart_item.user_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to modify this cart item'}), 403
-            
-            data = request.get_json()
-            
-            if 'quantity' in data:
-                if data['quantity'] <= 0:
-                    db.session.delete(cart_item)
-                else:
-                    cart_item.quantity = data['quantity']
-            
-            db.session.commit()
-            return jsonify({'message': 'Cart item updated successfully'}), 200
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/cart/<int:cart_item_id>', methods=['DELETE'])
-    @login_required
-    def remove_from_cart(cart_item_id):
-        try:
-            cart_item = CartItem.query.get_or_404(cart_item_id)
-            
-            # Check if user owns this cart item
-            if cart_item.user_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to delete this cart item'}), 403
-            
-            db.session.delete(cart_item)
-            db.session.commit()
-            
-            return jsonify({'message': 'Item removed from cart successfully'}), 200
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-        
-
-    # ------------------------------ Purchase Routes ----------------------------- #
-    @app.route('/api/purchases', methods=['POST'])
-    @login_required
-
-    def create_purchase():
-        try:
-            # Get user's cart items
-            cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-            
-            if not cart_items:
-                return jsonify({'error': 'Cart is empty'}), 400
-            
-            # Calculate total amount
-            total_amount = sum(item.product.price * item.quantity for item in cart_items)
-            
-            # Create purchase
-            purchase = Purchase(
-                buyer_id=current_user.id,
-                total_amount=total_amount
-            )
-            db.session.add(purchase)
-            db.session.flush()  # This flushes the transaction and assigns an ID to the purchase
-            
-            # Create purchase items and mark products as sold
-            for cart_item in cart_items:
-                purchase_item = PurchaseItem(
-                    purchase_id=purchase.id,  # Now purchase.id is available
-                    product_id=cart_item.product_id,
-                    quantity=cart_item.quantity,
-                    price_at_purchase=cart_item.product.price
-                )
-                db.session.add(purchase_item)
-                
-                # Mark product as sold
-                cart_item.product.is_sold = True
-                
-                # Remove from cart
-                db.session.delete(cart_item)
-            
-            db.session.commit()
-            
-            return jsonify({
-                'message': 'Purchase completed successfully',
-                'purchase': purchase.to_dict()
-            }), 201
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 500
-
-    @app.route('/api/purchases', methods=['GET'])
-    @login_required
-    def get_user_purchases():
-        try:
-            purchases = Purchase.query.filter_by(buyer_id=current_user.id).order_by(Purchase.purchase_date.desc()).all()
-            return jsonify({'purchases': [purchase.to_dict() for purchase in purchases]}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/purchases/<int:purchase_id>', methods=['GET'])
-    @login_required
-    def get_purchase(purchase_id):
-        try:
-            purchase = Purchase.query.get_or_404(purchase_id)
-            
-            # Check if user is the buyer
-            if purchase.buyer_id != current_user.id:
-                return jsonify({'error': 'Unauthorized to view this purchase'}), 403
-            
-            return jsonify({'purchase': purchase.to_dict()}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-
-    # ------------------------------- error handler ------------------------------ #
-        # Error handlers
-    @app.errorhandler(404)
-    def not_found(e):
-        return jsonify({'error': 'Resource not found'}), 404
-    
-    @app.errorhandler(500)
-    def server_error(e):
-        return jsonify({'error': 'Internal server error'}), 500
-    
-    @app.errorhandler(401)
-    def unauthorized(e):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    @app.errorhandler(403)
-    def forbidden(e):
-        return jsonify({'error': 'Forbidden'}), 403
-
-        
-    
-
-    
-
-        
-
-
-
-        
-    
- 
+    return jsonify({"msg": "Password reset successful"}), 200
