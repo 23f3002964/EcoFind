@@ -9,6 +9,7 @@ import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
 import ForgotPassword from '../views/ForgotPassword.vue';
 import ResetPassword from '../views/ResetPassword.vue';
+import PhoneVerificationView from '@/views/PhoneVerificationView.vue';
 
 // Products
 import ProductsView from '@/views/ProductsView.vue'
@@ -95,6 +96,16 @@ const routes = [
     path: '/signup',
     name: 'signup',
     component: SignupView
+  },
+  {
+    path: '/phone-verification',
+    name: 'phoneVerification',
+    component: PhoneVerificationView
+  },
+  {
+    path: '/verify-email/:token',
+    name: 'emailVerification',
+    component: () => import('../views/EmailVerificationView.vue')
   },
 
   { path: '/forgot-password', component: ForgotPassword },

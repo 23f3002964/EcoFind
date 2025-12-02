@@ -28,6 +28,12 @@
         <input v-model="email" type="email" class="form-control" id="email" placeholder="name@company.com" required>
       </div>
 
+      <!-- Phone Number -->
+      <div class="mb-3">
+        <label for="phoneNumber" class="form-label">Phone Number</label>
+        <input v-model="phoneNumber" type="tel" class="form-control" id="phoneNumber" placeholder="+1 (555) 123-4567" required>
+      </div>
+
       <!-- Password and Confirm Password -->
       <div class="row mb-3">
         <div class="col">
@@ -92,6 +98,7 @@ export default {
       firstName: '',
       lastName: '',
       email: '',
+      phoneNumber: '',
       password: '',
       confirmPassword: '',
       dob: '',
@@ -113,6 +120,7 @@ export default {
         email: this.email,
         first_name: this.firstName,
         last_name: this.lastName,
+        phone_number: this.phoneNumber,
         gender: this.gender || null,
         dob: this.dob || null,               // yyyy-mm-dd format from date input
         bio: this.bio || null,
@@ -133,13 +141,14 @@ export default {
         const result = await response.json();
 
         if (response.ok) {
-          this.successMessage = result.message || "Registration successful! You can now log in.";
+          this.successMessage = result.message || "Registration successful! Please check your email and phone for verification.";
           this.errorMessage = null;
 
           // Reset form
           this.firstName = '';
           this.lastName = '';
           this.email = '';
+          this.phoneNumber = '';
           this.password = '';
           this.confirmPassword = '';
           this.dob = '';

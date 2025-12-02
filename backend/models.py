@@ -31,6 +31,8 @@ class User(db.Model, UserMixin):
     rating = db.Column(db.Float, default=0.0, index=True)
     total_reviews = db.Column(db.Integer, default=0)
     preferred_language = db.Column(db.String(10), default='en')
+    email_verified = db.Column(db.Boolean(), default=False)
+    phone_verified = db.Column(db.Boolean(), default=False)
     
     # Relationships
     roles = db.relationship('Role', secondary='user_roles', backref='bearers')
@@ -72,7 +74,6 @@ class UserDetail(db.Model):
     gender = db.Column(db.String(10), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-
 
 
 class Category(db.Model):
