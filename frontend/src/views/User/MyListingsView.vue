@@ -92,7 +92,15 @@
                   </button>
                   
                   <button 
-                    v-if="product.is_active && !product.is_sold" 
+                    v-if="product.is_auction && isAuctionEnded(product) && !product.is_sold" 
+                    class="btn btn-sm btn-outline-success flex-fill" 
+                    @click="confirmAuctionSale(product.id)"
+                  >
+                    <i class="bi bi-check-circle"></i> Confirm Sale
+                  </button>
+                  
+                  <button 
+                    v-else-if="product.is_active && !product.is_sold" 
                     class="btn btn-sm btn-outline-danger flex-fill" 
                     @click="toggleProductStatus(product, false)"
                   >
@@ -229,10 +237,22 @@ export default {
       return diff > 0 && diff < (24 * 60 * 60 * 1000);
     },
     
+    isAuctionEnded(product) {
+      if (!product.auction_end_time) return false;
+      
+      const endTime = new Date(product.auction_end_time);
+      const now = new Date();
+      return now > endTime;
+    },
+    
     editProduct(productId) {
-      // For now, we'll redirect to the add product page with edit mode
-      // In a full implementation, you might have a separate edit view
-      alert('Edit functionality would open an edit form here.');
+      // Redirect to the edit product page
+      this.$router.push(`/edit-product/${productId}`);
+    },
+    
+    confirmAuctionSale(auctionId) {
+      // Redirect to the confirm auction sale page
+      this.$router.push(`/confirm-auction-sale/${auctionId}`);
     },
     
     async toggleProductStatus(product, isActive) {

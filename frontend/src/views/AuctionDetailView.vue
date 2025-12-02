@@ -23,7 +23,7 @@
               <img 
                 :src="currentImage" 
                 class="img-fluid rounded" 
-                alt="Product image"
+                :alt="auction.product.name"
                 style="max-height: 400px; object-fit: cover;"
               >
             </div>
@@ -35,7 +35,7 @@
                 :key="index"
                 :src="image" 
                 class="img-thumbnail" 
-                alt="Product thumbnail"
+                :alt="`Product thumbnail ${index + 1}`"
                 style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;"
                 @click="currentImage = image"
               >
@@ -98,13 +98,11 @@
               <h5>Seller Information</h5>
               
               <div class="d-flex align-items-center mb-3">
-                <img 
-                  :src="auction.seller.profile_picture || 'https://via.placeholder.com/50'" 
-                  class="rounded-circle me-3" 
-                  alt="Seller"
-                  width="50"
-                  height="50"
-                >
+                <div class="me-3">
+                  <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="bi bi-person text-white" style="font-size: 1.5rem;"></i>
+                  </div>
+                </div>
                 <div>
                   <div>{{ auction.seller.first_name }} {{ auction.seller.last_name }}</div>
                   <div class="text-muted">Rating: {{ auction.seller.rating }}/5</div>
@@ -157,7 +155,7 @@
               <div class="alert alert-info">
                 <strong>This auction has ended.</strong>
                 <div v-if="auction.winning_bid">
-                  Winning bid: ${{ auction.winning_bid.amount }} by {{ auction.winning_bid.bidder.first_name }}
+                  Winning bid: ${{ auction.winning_bid.amount }} by {{ auction.winning_bid.bidder.first_name }} {{ auction.winning_bid.bidder.last_name }}
                 </div>
                 <div v-else>
                   No winning bid.
@@ -239,7 +237,7 @@ export default {
     },
     
     timeRemaining() {
-      if (!this.auction) return '';
+      if (!this.auction || !this.auction.end_time) return '';
       
       const endTime = new Date(this.auction.end_time);
       const now = new Date();
@@ -295,7 +293,7 @@ export default {
     },
     
     getTimeRemainingClass() {
-      if (!this.auction) return '';
+      if (!this.auction || !this.auction.end_time) return '';
       
       const endTime = new Date(this.auction.end_time);
       const now = new Date();
@@ -318,7 +316,7 @@ export default {
       this.bidError = null;
       
       try {
-        const response = await axios.post(`/api/auctions/${this.auctionId}/bids`, {
+        const response = await axios.post(`/api/auctions/${this.auctionId}/bid`, {
           amount: parseFloat(this.bidAmount)
         });
         

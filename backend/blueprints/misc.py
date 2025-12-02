@@ -384,3 +384,56 @@ def get_translations():
     }
     
     return jsonify(translations.get(lang, translations['en'])), 200
+
+# ============= NOTIFICATIONS =============
+
+@misc_bp.route('/api/notifications', methods=['GET'])
+@auth_required()
+def get_notifications():
+    """Get user's notifications"""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    include_read = request.args.get('include_read', False, type=bool)
+    
+    query = Notification.query.filter_by(user_id=current_user.id)
+    
+    if not include_read:
+        query = query.filter_by(is_read=False)
+    
+    notifications = query.order_by(Notification.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    return jsonify({
+        'notifications': [{
+            'id': n.id,
+            'title': n.title,
+            'message': n.message,
+            'is_read': n.is_read,
+            'related_product_id': n.related_product_id,
+            'created_at': n.created_at.isoformat()
+        } for n in notifications.items],
+        'total': notifications.total,
+        'pages': notifications.pages,
+        'current_page': page
+    }), 200
+
+@misc_bp.route('/api/notifications/<int:notification_id>/read', methods=['PUT'])
+@auth_required()
+def mark_notification_as_read(notification_id):
+    """Mark a notification as read"""
+    notification = Notification.query.filter_by(id=notification_id, user_id=current_user.id).first_or_404()
+    
+    notification.is_read = True
+    db.session.commit()
+    
+    return jsonify({'message': 'Notification marked as read'}), 200
+
+@misc_bp.route('/api/notifications/read-all', methods=['PUT'])
+@auth_required()
+def mark_all_notifications_as_read():
+    """Mark all notifications as read"""
+    Notification.query.filter_by(user_id=current_user.id, is_read=False).update({'is_read': True})
+    db.session.commit()
+    
+    return jsonify({'message': 'All notifications marked as read'}), 200

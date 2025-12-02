@@ -16,24 +16,34 @@
           </div>
           <div class="card-body">
             <div class="row">
-              <div class="col-md-3 col-sm-6 mb-3">
+              <div class="col-md-2 col-sm-6 mb-3">
                 <router-link to="/products" class="btn btn-primary w-100">
                   <i class="bi bi-search me-1"></i> Browse Products
                 </router-link>
               </div>
-              <div class="col-md-3 col-sm-6 mb-3">
+              <div class="col-md-2 col-sm-6 mb-3">
                 <router-link to="/add-product" class="btn btn-success w-100">
                   <i class="bi bi-plus-lg me-1"></i> Add Product
                 </router-link>
               </div>
-              <div class="col-md-3 col-sm-6 mb-3">
-                <router-link to="/user/1/listings" class="btn btn-info w-100">
+              <div class="col-md-2 col-sm-6 mb-3">
+                <router-link :to="`/user/${userId}/listings`" class="btn btn-info w-100">
                   <i class="bi bi-list-ul me-1"></i> My Listings
                 </router-link>
               </div>
-              <div class="col-md-3 col-sm-6 mb-3">
-                <router-link to="/user/1/cart" class="btn btn-warning w-100">
+              <div class="col-md-2 col-sm-6 mb-3">
+                <router-link :to="`/user/${userId}/cart`" class="btn btn-warning w-100">
                   <i class="bi bi-cart me-1"></i> My Cart
+                </router-link>
+              </div>
+              <div class="col-md-2 col-sm-6 mb-3">
+                <router-link to="/my-bids" class="btn btn-secondary w-100">
+                  <i class="bi bi-gavel me-1"></i> My Bids
+                </router-link>
+              </div>
+              <div class="col-md-2 col-sm-6 mb-3">
+                <router-link :to="`/user/${userId}/purchases`" class="btn btn-dark w-100">
+                  <i class="bi bi-box-seam me-1"></i> Purchases
                 </router-link>
               </div>
             </div>
@@ -85,7 +95,7 @@ export default {
   name: 'Dashboard',
   data() {
     return {
-      userId: this.$route.params.userId || 1,
+      userId: this.$route.params.userId || this.$store.state.userId || 1,
       loading: false,
       cards: [
         { title: 'My Listings', value: 5 },

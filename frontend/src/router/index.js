@@ -10,6 +10,10 @@ import SignupView from '@/views/SignupView.vue'
 import ForgotPassword from '../views/ForgotPassword.vue';
 import ResetPassword from '../views/ResetPassword.vue';
 import PhoneVerificationView from '@/views/PhoneVerificationView.vue';
+import EditProductView from '@/views/EditProductView.vue';
+import ConfirmAuctionSaleView from '@/views/ConfirmAuctionSaleView.vue';
+import MyBidsView from '@/views/MyBidsView.vue';
+import NotificationsView from '@/views/NotificationsView.vue';
 
 // Products
 import ProductsView from '@/views/ProductsView.vue'
@@ -65,6 +69,30 @@ const routes = [
     path: '/add-product',
     name: 'addProduct',
     component: AddProductView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/edit-product/:id',
+    name: 'editProduct',
+    component: EditProductView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/confirm-auction-sale/:id',
+    name: 'confirmAuctionSale',
+    component: ConfirmAuctionSaleView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-bids',
+    name: 'myBids',
+    component: MyBidsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/notifications',
+    name: 'notifications',
+    component: NotificationsView,
     meta: { requiresAuth: true }
   },
   {

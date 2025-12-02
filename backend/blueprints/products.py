@@ -306,6 +306,135 @@ def create_category():
 
 # ============= AUCTION SYSTEM =============
 
+@products_bp.route('/api/auctions/<int:auction_id>', methods=['GET'])
+def get_auction(auction_id):
+    """Get detailed auction information"""
+    product = Product.query.filter_by(id=auction_id, is_auction=True).first_or_404()
+    
+    # Get bids for this auction
+    bids = Bid.query.filter_by(product_id=product.id).order_by(Bid.amount.desc()).all()
+    
+    # Get winning bid (highest bid)
+    winning_bid = bids[0] if bids else None
+    
+    return jsonify({
+        'product': {
+            'id': product.id,
+            'name': product.title,
+            'description': product.description,
+            'category': product.category.name if product.category else None,
+            'images': json.loads(product.images) if product.images else [],
+            'starting_price': product.price,
+            'condition': product.condition,
+            'location': product.location,
+            'brand': product.brand,
+            'model': product.model,
+            'material': product.material,
+            'views': product.views,
+            'created_at': product.created_at.isoformat()
+        },
+        'starting_price': product.price,
+        'minimum_bid': product.minimum_bid,
+        'reserve_price': product.reserve_price,
+        'current_highest_bid': product.current_bid if product.current_bid > 0 else None,
+        'bid_count': len(bids),
+        'bids': [{
+            'id': bid.id,
+            'bidder': {
+                'id': bid.bidder.id,
+                'username': bid.bidder.username,
+                'first_name': bid.bidder.user_detail.first_name if bid.bidder.user_detail else None,
+                'last_name': bid.bidder.user_detail.last_name if bid.bidder.user_detail else None
+            },
+            'amount': bid.amount,
+            'created_at': bid.created_at.isoformat()
+        } for bid in bids],
+        'winning_bid': {
+            'id': winning_bid.id,
+            'bidder': {
+                'id': winning_bid.bidder.id,
+                'username': winning_bid.bidder.username,
+                'first_name': winning_bid.bidder.user_detail.first_name if winning_bid.bidder.user_detail else None,
+                'last_name': winning_bid.bidder.user_detail.last_name if winning_bid.bidder.user_detail else None
+            },
+            'amount': winning_bid.amount,
+            'created_at': winning_bid.created_at.isoformat()
+        } if winning_bid else None,
+        'end_time': product.auction_end_time.isoformat() if product.auction_end_time else None,
+        'status': 'ended' if datetime.utcnow() > product.auction_end_time else 'active',
+        'seller': {
+            'id': product.seller.id,
+            'username': product.seller.username,
+            'first_name': product.seller.user_detail.first_name if product.seller.user_detail else None,
+            'last_name': product.seller.user_detail.last_name if product.seller.user_detail else None,
+            'rating': product.seller.rating,
+            'profile_picture': None  # Would need to implement profile pictures
+        }
+    }), 200
+
+@products_bp.route('/api/auctions/<int:auction_id>/confirm-sale', methods=['POST'])
+@auth_required()
+def confirm_auction_sale(auction_id):
+    """Allow seller to confirm sale after auction ends"""
+    product = Product.query.get_or_404(auction_id)
+    
+    # Check if product is an auction
+    if not product.is_auction:
+        return jsonify({'error': 'Product is not an auction item'}), 400
+    
+    # Check if user is the seller
+    if product.seller_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    # Check if auction has ended
+    if datetime.utcnow() < product.auction_end_time:
+        return jsonify({'error': 'Auction is still active'}), 400
+    
+    # Check if there's a winning bid that meets reserve price
+    if product.current_bid <= 0:
+        return jsonify({'error': 'No bids placed'}), 400
+    
+    if product.reserve_price and product.current_bid < product.reserve_price:
+        return jsonify({'error': 'Reserve price not met'}), 400
+    
+    # Mark product as sold
+    product.is_sold = True
+    
+    # Create purchase record
+    winning_bid = Bid.query.filter_by(product_id=product.id, amount=product.current_bid).first()
+    if winning_bid:
+        purchase = Purchase(
+            buyer_id=winning_bid.bidder_id,
+            product_id=product.id,
+            seller_id=product.seller_id,
+            amount=product.current_bid,
+            status='completed'
+        )
+        db.session.add(purchase)
+        
+        # Send notification to winning bidder
+        notification = Notification(
+            user_id=winning_bid.bidder_id,
+            title="You've won an auction!",
+            message=f"Congratulations! You've won the auction for '{product.title}' with a bid of ${product.current_bid}. Please check your messages from the seller to arrange payment and delivery.",
+            related_product_id=product.id,
+            related_bid_id=winning_bid.id
+        )
+        db.session.add(notification)
+    
+    # Send notification to seller
+    seller_notification = Notification(
+        user_id=product.seller_id,
+        title="Auction sale confirmed",
+        message=f"You've confirmed the sale of '{product.title}' for ${product.current_bid}. Please contact the buyer to arrange payment and delivery.",
+        related_product_id=product.id
+    )
+    db.session.add(seller_notification)
+    
+    db.session.commit()
+    
+    return jsonify({'message': 'Sale confirmed successfully'}), 200
+
 @products_bp.route('/api/products/<int:product_id>/bid', methods=['POST'])
 @auth_required()
 def place_bid(product_id):
@@ -334,9 +463,42 @@ def place_bid(product_id):
     product.current_bid = bid_amount
     
     db.session.add(bid)
+    
+    # Send notification to seller if this is the first bid or a new highest bid
+    if product.current_bid == bid_amount:
+        notification = Notification(
+            user_id=product.seller_id,
+            title="New bid on your auction",
+            message=f"Someone has placed a new bid of ${bid_amount} on your auction '{product.title}'.",
+            related_product_id=product.id,
+            related_bid_id=bid.id
+        )
+        db.session.add(notification)
+    
+    # Send notification to previous highest bidder if they've been outbid
+    previous_highest_bid = Bid.query.filter(
+        Bid.product_id == product_id,
+        Bid.amount < bid_amount,
+        Bid.bidder_id != current_user.id
+    ).order_by(Bid.amount.desc()).first()
+    
+    if previous_highest_bid:
+        outbid_notification = Notification(
+            user_id=previous_highest_bid.bidder_id,
+            title="You've been outbid",
+            message=f"Your bid on '{product.title}' has been outbid. The new highest bid is ${bid_amount}.",
+            related_product_id=product.id
+        )
+        db.session.add(outbid_notification)
+    
     db.session.commit()
     
-    return jsonify({'message': 'Bid placed successfully'}), 201
+    # Return updated bid information
+    return jsonify({
+        'message': 'Bid placed successfully',
+        'amount': bid_amount,
+        'bid_count': len(product.bids)
+    }), 201
 
 @products_bp.route('/api/products/<int:product_id>/bids', methods=['GET'])
 def get_product_bids(product_id):
@@ -371,3 +533,19 @@ def get_my_bids():
             'created_at': bid.created_at.isoformat()
         } for bid in bids]
     }), 200
+
+@products_bp.route('/api/auctions/<int:auction_id>/watch', methods=['POST'])
+@auth_required()
+def watch_auction(auction_id):
+    """Watch an auction"""
+    # This would typically add the auction to the user's watched items
+    # For now, we'll just return a success response
+    return jsonify({'message': 'Auction added to watchlist'}), 200
+
+@products_bp.route('/api/auctions/<int:auction_id>/watch', methods=['DELETE'])
+@auth_required()
+def unwatch_auction(auction_id):
+    """Unwatch an auction"""
+    # This would typically remove the auction from the user's watched items
+    # For now, we'll just return a success response
+    return jsonify({'message': 'Auction removed from watchlist'}), 200
