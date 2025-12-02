@@ -6,6 +6,12 @@ from backend.resource import api
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_mail import Mail
 
+# Import blueprints
+from backend.blueprints.auth import auth_bp, init_auth_blueprint
+from backend.blueprints.products import products_bp
+from backend.blueprints.users import users_bp
+from backend.blueprints.admin import admin_bp
+
 mail = Mail()
 
 def createApp():
@@ -18,6 +24,15 @@ def createApp():
     datastore = SQLAlchemyUserDatastore(db, User, Role) # Create the user datastore
     app.security=Security(app, datastore, register_blueprint=False) # Initialize Flask-Security
     app.app_context().push()
+
+    # Initialize blueprints
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(products_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(admin_bp)
+    
+    # Initialize auth blueprint with app and datastore
+    init_auth_blueprint(app, datastore)
 
     return app
 

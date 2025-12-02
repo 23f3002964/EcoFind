@@ -9,7 +9,14 @@ from datetime import datetime, timedelta
 from sqlalchemy import or_, and_
 import json
 
-
+# Add imports for caching
+try:
+    from flask_caching import Cache
+    cache = Cache(app, config={'CACHE_TYPE': 'redis', 'CACHE_REDIS_URL': app.config.get('REDIS_URL', 'redis://localhost:6379/0')})
+except ImportError:
+    # Fallback to simple in-memory cache if redis is not available
+    from flask_caching import Cache
+    cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 datastore = app.security.datastore
 mail = Mail()
@@ -298,6 +305,7 @@ def update_profile(id):
 # ============= CATEGORY MANAGEMENT =============
 
 @app.route('/api/categories', methods=['GET'])
+@cache.cached(timeout=300)  # Cache for 5 minutes
 def get_categories():
     categories = Category.query.filter_by(parent_id=None).all()
     
@@ -385,16 +393,23 @@ def get_products():
     
     products = query.paginate(page=page, per_page=per_page, error_out=False)
     
-    return jsonify({
-        'products': [{
+    # Optimize by joining related tables to avoid N+1 queries
+    products_with_details = []
+    for p in products.items:
+        # Pre-fetch related data to avoid additional queries
+        category_name = p.category.name if p.category else None
+        seller_username = p.seller.username if p.seller else None
+        seller_rating = p.seller.rating if p.seller else None
+        
+        product_dict = {
             'id': p.id,
             'title': p.title,
             'description': p.description,
             'price': p.price,
             'condition': p.condition,
-            'category': p.category.name,
-            'seller': p.seller.username,
-            'seller_rating': p.seller.rating,
+            'category': category_name,
+            'seller': seller_username,
+            'seller_rating': seller_rating,
             'images': json.loads(p.images) if p.images else [],
             'is_auction': p.is_auction,
             'current_bid': p.current_bid,
@@ -404,7 +419,11 @@ def get_products():
             'model': p.model,
             'views': p.views,
             'created_at': p.created_at.isoformat()
-        } for p in products.items],
+        }
+        products_with_details.append(product_dict)
+    
+    return jsonify({
+        'products': products_with_details,
         'total': products.total,
         'pages': products.pages,
         'current_page': page
@@ -412,7 +431,12 @@ def get_products():
 
 @app.route('/api/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
-    product = Product.query.get_or_404(product_id)
+    # Optimize by joining related tables
+    product = db.session.query(Product)\
+        .options(db.joinedload(Product.category))\
+        .options(db.joinedload(Product.seller).joinedload(User.user_detail))\
+        .filter(Product.id == product_id)\
+        .first_or_404()
     
     # Increment view count
     product.views += 1
@@ -650,28 +674,43 @@ def get_my_bids():
 @app.route('/api/cart', methods=['GET'])
 @auth_required()
 def get_cart():
-    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    # Optimize by joining related tables
+    cart_items = db.session.query(CartItem)\
+        .options(db.joinedload(CartItem.product))\
+        .filter(CartItem.user_id == current_user.id)\
+        .all()
     
-    total_amount = sum(item.product.price * item.quantity for item in cart_items if item.product.is_active and not item.product.is_sold)
+    cart_items_with_details = []
+    total_amount = 0
+    
+    for item in cart_items:
+        if item.product and item.product.is_active and not item.product.is_sold:
+            product_images = json.loads(item.product.images) if item.product.images else []
+            
+            subtotal = item.product.price * item.quantity
+            total_amount += subtotal
+            
+            item_dict = {
+                'id': item.id,
+                'product': {
+                    'id': item.product.id,
+                    'title': item.product.title,
+                    'price': item.product.price,
+                    'images': product_images,
+                    'seller': item.product.seller.username if item.product.seller else None,
+                    'is_active': item.product.is_active,
+                    'is_sold': item.product.is_sold
+                },
+                'quantity': item.quantity,
+                'subtotal': subtotal,
+                'added_at': item.added_at.isoformat()
+            }
+            cart_items_with_details.append(item_dict)
     
     return jsonify({
-        'items': [{
-            'id': item.id,
-            'product': {
-                'id': item.product.id,
-                'title': item.product.title,
-                'price': item.product.price,
-                'images': json.loads(item.product.images) if item.product.images else [],
-                'seller': item.product.seller.username,
-                'is_active': item.product.is_active,
-                'is_sold': item.product.is_sold
-            },
-            'quantity': item.quantity,
-            'subtotal': item.product.price * item.quantity,
-            'added_at': item.added_at.isoformat()
-        } for item in cart_items],
+        'items': cart_items_with_details,
         'total_amount': total_amount,
-        'total_items': len(cart_items)
+        'total_items': len(cart_items_with_details)
     }), 200
 
 @app.route('/api/cart', methods=['POST'])
@@ -1275,6 +1314,7 @@ def search_products():
 
 @app.route('/api/recommendations', methods=['GET'])
 @auth_required()
+@cache.cached(timeout=180, key_prefix='recommendations')  # Cache for 3 minutes
 def get_recommendations():
     # Simple recommendation based on user's saved items and purchase history
     saved_categories = db.session.query(Product.category_id).join(SavedItem).filter(SavedItem.user_id == current_user.id).distinct()
