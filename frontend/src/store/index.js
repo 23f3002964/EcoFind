@@ -31,6 +31,7 @@ export default createStore({
 
     SET_USER_DATA(state, payload) {
       state.userData = payload;
+      sessionStorage.setItem("userData", JSON.stringify(payload));
     },
   },
 

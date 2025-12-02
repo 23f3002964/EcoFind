@@ -18,7 +18,7 @@
         style="font-size: 0.6rem;"
       >
         {{ unreadCount }}
-        <span class="visually-hidden">unread notifications</span>
+        <span class="visually-hidden">{{ $t('unread_notifications') }}</span>
       </span>
     </button>
     
@@ -26,7 +26,7 @@
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
       <!-- Header with title and mark all as read button -->
       <li class="dropdown-header d-flex justify-content-between align-items-center">
-        <span>Notifications</span>
+        <span>{{ $t('notifications') }}</span>
         <!-- Mark all as read button (only shown when there are unread notifications) -->
         <button 
           v-if="unreadCount > 0" 
@@ -35,20 +35,20 @@
           :disabled="markingAllRead"
         >
           <span v-if="markingAllRead" class="spinner-border spinner-border-sm" role="status"></span>
-          <span v-else>Mark all as read</span>
+          <span v-else>{{ $t('mark_all_read') }}</span>
         </button>
       </li>
       
       <!-- Loading state indicator -->
       <li v-if="loading" class="dropdown-item-text text-center">
         <div class="spinner-border spinner-border-sm" role="status">
-          <span class="visually-hidden">Loading...</span>
+          <span class="visually-hidden">{{ $t('loading') }}...</span>
         </div>
       </li>
       
       <!-- Empty state message -->
       <li v-else-if="notifications.length === 0" class="dropdown-item-text text-center text-muted">
-        No notifications
+        {{ $t('no_notifications') }}
       </li>
       
       <!-- Notification list -->
@@ -72,7 +72,7 @@
             <p class="mb-1">{{ notification.message }}</p>
             <!-- Related product indicator -->
             <small v-if="notification.related_product_id" class="text-primary">
-              <i class="bi bi-box"></i> Related product
+              <i class="bi bi-box"></i> {{ $t('related_product') }}
             </small>
           </a>
         </div>
@@ -81,7 +81,7 @@
       <!-- Footer with link to full notifications page -->
       <li v-if="notifications.length > 0" class="dropdown-item-text text-center border-top">
         <router-link to="/notifications" class="text-decoration-none">
-          View all notifications
+          {{ $t('view_all_notifications') }}
         </router-link>
       </li>
     </ul>
@@ -157,7 +157,7 @@ export default {
         this.unreadCount = 0;
       } catch (error) {
         console.error('Error marking all as read:', error);
-        alert('Failed to mark all notifications as read');
+        alert(this.$t('failed_mark_all_read'));
       } finally {
         this.markingAllRead = false;
       }
@@ -198,13 +198,13 @@ export default {
       const diffMinutes = Math.floor(((diffMs % 86400000) % 3600000) / 60000);
       
       if (diffDays > 0) {
-        return `${diffDays}d ago`;
+        return `${diffDays}${this.$t('days_ago')}`;
       } else if (diffHours > 0) {
-        return `${diffHours}h ago`;
+        return `${diffHours}${this.$t('hours_ago')}`;
       } else if (diffMinutes > 0) {
-        return `${diffMinutes}m ago`;
+        return `${diffMinutes}${this.$t('minutes_ago')}`;
       } else {
-        return 'Just now';
+        return this.$t('just_now');
       }
     }
   }

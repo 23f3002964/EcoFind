@@ -9,8 +9,8 @@
       <button
         class="btn btn-sm btn-outline-secondary"
         @click="toggleSidebar"
-        :title="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
-        aria-label="Toggle sidebar"
+        :title="isCollapsed ? $t('expand_sidebar') : $t('collapse_sidebar')"
+        :aria-label="isCollapsed ? $t('expand_sidebar') : $t('collapse_sidebar')"
       >
         <i :class="isCollapsed ? 'bi bi-chevron-double-right' : 'bi bi-chevron-double-left'"></i>
       </button>
@@ -29,15 +29,15 @@
       <template v-if="isAuthenticated && userRole === 'Admin'">
         <router-link :to="`/admin/${userId}/dashboard`" class="nav-link d-flex align-items-center">
           <i class="bi bi-speedometer2 me-2"></i>
-          <span v-if="!isCollapsed">Dashboard</span>
+          <span v-if="!isCollapsed">{{ $t('dashboard') }}</span>
         </router-link>
         <router-link :to="`/admin/${userId}/users`" class="nav-link d-flex align-items-center">
           <i class="bi bi-people me-2"></i>
-          <span v-if="!isCollapsed">Users</span>
+          <span v-if="!isCollapsed">{{ $t('users') }}</span>
         </router-link>
         <router-link :to="`/admin/${userId}/profile`" class="nav-link d-flex align-items-center">
           <i class="bi bi-person me-2"></i>
-          <span v-if="!isCollapsed">Profile</span>
+          <span v-if="!isCollapsed">{{ $t('profile') }}</span>
         </router-link>
       </template>
 
@@ -45,27 +45,27 @@
       <template v-else-if="isAuthenticated && userRole === 'User'">
         <router-link :to="`/user/${userId}/dashboard`" class="nav-link d-flex align-items-center">
           <i class="bi bi-house-door me-2"></i>
-          <span v-if="!isCollapsed">Dashboard</span>
+          <span v-if="!isCollapsed">{{ $t('dashboard') }}</span>
         </router-link>
         <router-link to="/products" class="nav-link d-flex align-items-center">
           <i class="bi bi-search me-2"></i>
-          <span v-if="!isCollapsed">Browse</span>
+          <span v-if="!isCollapsed">{{ $t('browse') }}</span>
         </router-link>
         <router-link to="/chats" class="nav-link d-flex align-items-center">
           <i class="bi bi-chat-dots me-2"></i>
-          <span v-if="!isCollapsed">Messages</span>
+          <span v-if="!isCollapsed">{{ $t('messages') }}</span>
         </router-link>
         <router-link to="/saved-searches" class="nav-link d-flex align-items-center">
           <i class="bi bi-bookmark me-2"></i>
-          <span v-if="!isCollapsed">Saved Searches</span>
+          <span v-if="!isCollapsed">{{ $t('saved_searches') }}</span>
         </router-link>
         <router-link to="/price-alerts" class="nav-link d-flex align-items-center">
           <i class="bi bi-bell me-2"></i>
-          <span v-if="!isCollapsed">Price Alerts</span>
+          <span v-if="!isCollapsed">{{ $t('price_alerts') }}</span>
         </router-link>
         <router-link :to="`/user/${userId}/profile`" class="nav-link d-flex align-items-center">
           <i class="bi bi-person me-2"></i>
-          <span v-if="!isCollapsed">Profile</span>
+          <span v-if="!isCollapsed">{{ $t('profile') }}</span>
         </router-link>
       </template>
 
@@ -73,23 +73,23 @@
       <template v-else>
         <router-link to="/" class="nav-link d-flex align-items-center">
           <i class="bi bi-house me-2"></i>
-          <span v-if="!isCollapsed">Home</span>
+          <span v-if="!isCollapsed">{{ $t('home') }}</span>
         </router-link>
         <router-link to="/products" class="nav-link d-flex align-items-center">
           <i class="bi bi-search me-2"></i>
-          <span v-if="!isCollapsed">Browse</span>
+          <span v-if="!isCollapsed">{{ $t('browse') }}</span>
         </router-link>
         <router-link to="/about" class="nav-link d-flex align-items-center">
           <i class="bi bi-info-circle me-2"></i>
-          <span v-if="!isCollapsed">About</span>
+          <span v-if="!isCollapsed">{{ $t('about') }}</span>
         </router-link>
         <router-link to="/signup" class="nav-link d-flex align-items-center">
           <i class="bi bi-person-plus me-2"></i>
-          <span v-if="!isCollapsed">SignUp</span>
+          <span v-if="!isCollapsed">{{ $t('signup') }}</span>
         </router-link>
         <router-link to="/login" class="nav-link d-flex align-items-center">
           <i class="bi bi-box-arrow-in-right me-2"></i>
-          <span v-if="!isCollapsed">LogIn</span>
+          <span v-if="!isCollapsed">{{ $t('login') }}</span>
         </router-link>
       </template>
     </nav>
@@ -102,7 +102,7 @@
         @click="handleLogout"
       >
         <i class="bi bi-box-arrow-right me-2"></i>
-        <span v-if="!isCollapsed">Logout</span>
+        <span v-if="!isCollapsed">{{ $t('logout') }}</span>
       </div>
     </div>
   </div>
@@ -137,7 +137,7 @@ export default {
       this.isCollapsed = !this.isCollapsed;
     },
     handleLogout() {
-      if (confirm('Are you sure you want to logout?')) {
+      if (confirm(this.$t('confirm_logout'))) {
         this.$store.dispatch('logout');
         this.$router.push({ name: 'login' });
       }

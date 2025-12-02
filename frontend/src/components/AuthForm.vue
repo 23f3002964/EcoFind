@@ -7,7 +7,7 @@
       <!-- Terms and Conditions Checkbox (optional) -->
       <div v-if="showTerms" class="form-check mb-3">
         <input v-model="acceptTerms" type="checkbox" class="form-check-input" id="term" required />
-        <label class="form-check-label" for="term">I accept the <a href="#" class="">Terms and Conditions</a></label>
+        <label class="form-check-label" for="term">{{ $t('i_accept_terms') }} <a href="#" class="">{{ $t('terms_and_conditions') }}</a></label>
       </div>
 
       <!-- Submit Button -->

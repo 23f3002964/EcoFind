@@ -444,6 +444,7 @@ def get_translations():
     
     translations = {
         'en': {
+            # Header and Navigation
             'welcome': 'Welcome to EcoFinds',
             'search_placeholder': 'Search for products...',
             'categories': 'Categories',
@@ -453,31 +454,447 @@ def get_translations():
             'saved_items': 'Saved Items',
             'dashboard': 'Dashboard',
             'profile': 'Profile',
-            'logout': 'Logout'
+            'logout': 'Logout',
+            'language': 'Language',
+            
+            # Common Actions
+            'save': 'Save',
+            'cancel': 'Cancel',
+            'delete': 'Delete',
+            'edit': 'Edit',
+            'view': 'View',
+            'close': 'Close',
+            'submit': 'Submit',
+            'update': 'Update',
+            
+            # Dashboard
+            'my_dashboard': 'My Dashboard',
+            'total_listings': 'Total Listings',
+            'active_listings': 'Active Listings',
+            'sold_items': 'Sold Items',
+            'total_purchases': 'Total Purchases',
+            'total_sales': 'Total Sales',
+            'unread_messages': 'Unread Messages',
+            'user_rating': 'User Rating',
+            'total_reviews': 'Total Reviews',
+            
+            # Product Related
+            'products': 'Products',
+            'add_product': 'Add Product',
+            'my_listings': 'My Listings',
+            'browse_products': 'Browse Products',
+            'product_details': 'Product Details',
+            'price': 'Price',
+            'condition': 'Condition',
+            'location': 'Location',
+            'description': 'Description',
+            'seller': 'Seller',
+            'contact_seller': 'Contact Seller',
+            
+            # User Profile
+            'personal_information': 'Personal Information',
+            'full_name': 'Full Name',
+            'email': 'Email',
+            'date_of_birth': 'Date of Birth',
+            'gender': 'Gender',
+            'bio': 'Bio',
+            'joined': 'Joined',
+            'status': 'Status',
+            'active': 'Active',
+            'rating': 'Rating',
+            'no_bio_available': 'No bio available',
+            
+            # Reviews
+            'reviews': 'Reviews',
+            'leave_review': 'Leave Review',
+            'review_comment': 'Review Comment',
+            'submit_review': 'Submit Review',
+            
+            # Disputes
+            'disputes': 'Disputes',
+            'file_dispute': 'File Dispute',
+            'dispute_title': 'Dispute Title',
+            'dispute_description': 'Dispute Description',
+            'submit_dispute': 'Submit Dispute',
+            
+            # Notifications
+            'notifications': 'Notifications',
+            'mark_all_read': 'Mark All Read',
+            'unread_notifications': 'unread notifications',
+            'loading': 'Loading',
+            'no_notifications': 'No notifications',
+            'related_product': 'Related product',
+            'view_all_notifications': 'View all notifications',
+            'failed_mark_all_read': 'Failed to mark all notifications as read',
+            'days_ago': 'd ago',
+            'hours_ago': 'h ago',
+            'minutes_ago': 'm ago',
+            'just_now': 'Just now',
+            
+            # Chats/Messages
+            'no_conversations_yet': 'No conversations yet',
+            'conversations_will_appear_here': 'Your conversations with other users will appear here.',
+            'general_conversation': 'General conversation',
+            'failed_load_conversations': 'Failed to load conversations. Please try again.',
+            
+            # Saved Searches
+            'saved_searches': 'Saved Searches',
+            'save_search': 'Save Search',
+            
+            # Price Alerts
+            'price_alerts': 'Price Alerts',
+            'create_alert': 'Create Alert',
+            'target_price': 'Target Price',
+            
+            # Authentication
+            'login': 'Login',
+            'signup': 'Sign Up',
+            'forgot_password': 'Forgot Password',
+            'reset_password': 'Reset Password',
+            'verify_email': 'Verify Email',
+            'verify_phone': 'Verify Phone',
+            'i_accept_terms': 'I accept the',
+            'terms_and_conditions': 'Terms and Conditions',
+            
+            # Form Labels
+            'username': 'Username',
+            'password': 'Password',
+            'confirm_password': 'Confirm Password',
+            'first_name': 'First Name',
+            'last_name': 'Last Name',
+            'phone_number': 'Phone Number',
+            'address': 'Address',
+            
+            # Status Labels
+            'open': 'Open',
+            'in_progress': 'In Progress',
+            'resolved': 'Resolved',
+            'closed': 'Closed',
+            
+            # Home Page
+            'why_use_ecofinds': 'Why Use EcoFinds?',
+            'eco_friendly_focus': 'Eco-Friendly Focus',
+            'eco_friendly_description': 'We list only verified sustainable and eco-conscious businesses.',
+            'local_discovery': 'Local Discovery',
+            'local_discovery_description': 'Find green shops, cafes, and services in your neighborhood.',
+            'support_good_causes': 'Support Good Causes',
+            'support_good_causes_description': 'Your purchases make a difference for the planet and people.',
+            'ready_to_make_difference': 'Ready to Make a Difference?',
+            'join_eco_conscious_shoppers': 'Join thousands of eco-conscious shoppers today.',
+            'about_ecofinds': 'About EcoFinds',
+            'mission_statement': "We're on a mission to connect eco-conscious consumers with sustainable businesses worldwide.",
+            'all_rights_reserved': 'All rights reserved.',
+            
+            # NavBar
+            'home': 'Home',
+            'browse': 'Browse',
+            'about': 'About',
+            'users': 'Users',
+            'expand_sidebar': 'Expand Sidebar',
+            'collapse_sidebar': 'Collapse Sidebar',
+            'confirm_logout': 'Are you sure you want to logout?'
         },
         'hi': {
+            # Header and Navigation
             'welcome': 'EcoFinds में आपका स्वागत है',
-            'search_placeholder': 'उत्पाद खोजें...',
-            'categories': 'श्रेणियां',
+            'search_placeholder': 'उत्पादों की खोज करें...',
+            'categories': 'श्रेणियाँ',
             'my_account': 'मेरा खाता',
             'cart': 'कार्ट',
             'messages': 'संदेश',
-            'saved_items': 'सहेजे गए आइटम',
+            'saved_items': 'सहेजी गई वस्तुएँ',
             'dashboard': 'डैशबोर्ड',
             'profile': 'प्रोफ़ाइल',
-            'logout': 'लॉग आउट'
+            'logout': 'लॉग आउट',
+            'language': 'भाषा',
+            
+            # Common Actions
+            'save': 'सहेजें',
+            'cancel': 'रद्द करें',
+            'delete': 'हटाएँ',
+            'edit': 'संपादित करें',
+            'view': 'देखें',
+            'close': 'बंद करें',
+            'submit': 'जमा करें',
+            'update': 'अपडेट करें',
+            
+            # Dashboard
+            'my_dashboard': 'मेरा डैशबोर्ड',
+            'total_listings': 'कुल लिस्टिंग',
+            'active_listings': 'सक्रिय लिस्टिंग',
+            'sold_items': 'बेचे गए आइटम',
+            'total_purchases': 'कुल खरीदारी',
+            'total_sales': 'कुल बिक्री',
+            'unread_messages': 'अपठित संदेश',
+            'user_rating': 'उपयोगकर्ता रेटिंग',
+            'total_reviews': 'कुल समीक्षाएँ',
+            
+            # Product Related
+            'products': 'उत्पाद',
+            'add_product': 'उत्पाद जोड़ें',
+            'my_listings': 'मेरी लिस्टिंग',
+            'browse_products': 'उत्पाद ब्राउज़ करें',
+            'product_details': 'उत्पाद विवरण',
+            'price': 'मूल्य',
+            'condition': 'शर्त',
+            'location': 'स्थान',
+            'description': 'विवरण',
+            'seller': 'विक्रेता',
+            'contact_seller': 'विक्रेता से संपर्क करें',
+            
+            # User Profile
+            'personal_information': 'व्यक्तिगत जानकारी',
+            'full_name': 'पूरा नाम',
+            'email': 'ईमेल',
+            'date_of_birth': 'जन्म तिथि',
+            'gender': 'लिंग',
+            'bio': 'जीवनी',
+            'joined': 'शामिल हुए',
+            'status': 'स्थिति',
+            'active': 'सक्रिय',
+            'rating': 'रेटिंग',
+            'no_bio_available': 'कोई जीवनी उपलब्ध नहीं है',
+            
+            # Reviews
+            'reviews': 'समीक्षाएँ',
+            'leave_review': 'समीक्षा छोड़ें',
+            'review_comment': 'समीक्षा टिप्पणी',
+            'submit_review': 'समीक्षा जमा करें',
+            
+            # Disputes
+            'disputes': 'विवाद',
+            'file_dispute': 'विवाद दर्ज करें',
+            'dispute_title': 'विवाद शीर्षक',
+            'dispute_description': 'विवाद विवरण',
+            'submit_dispute': 'विवाद जमा करें',
+            
+            # Notifications
+            'notifications': 'अधिसूचनाएँ',
+            'mark_all_read': 'सभी को पढ़ा हुआ चिह्नित करें',
+            'unread_notifications': 'अपठित अधिसूचनाएँ',
+            'loading': 'लोड हो रहा है',
+            'no_notifications': 'कोई अधिसूचनाएँ नहीं',
+            'related_product': 'संबंधित उत्पाद',
+            'view_all_notifications': 'सभी अधिसूचनाएँ देखें',
+            'failed_mark_all_read': 'सभी अधिसूचनाओं को पढ़ा हुआ चिह्नित करने में विफल',
+            'days_ago': 'दिन पहले',
+            'hours_ago': 'घंटे पहले',
+            'minutes_ago': 'मिनट पहले',
+            'just_now': 'अभी',
+            
+            # Chats/Messages
+            'no_conversations_yet': 'अभी तक कोई वार्तालाप नहीं',
+            'conversations_will_appear_here': 'आपके अन्य उपयोगकर्ताओं के साथ वार्तालाप यहाँ दिखाई देंगे।',
+            'general_conversation': 'सामान्य वार्तालाप',
+            'failed_load_conversations': 'वार्तालाप लोड करने में विफल। कृपया पुनः प्रयास करें।',
+            
+            # Saved Searches
+            'saved_searches': 'सहेजी गई खोजें',
+            'save_search': 'खोज सहेजें',
+            
+            # Price Alerts
+            'price_alerts': 'मूल्य अलर्ट',
+            'create_alert': 'अलर्ट बनाएँ',
+            'target_price': 'लक्ष्य मूल्य',
+            
+            # Authentication
+            'login': 'लॉग इन करें',
+            'signup': 'साइन अप करें',
+            'forgot_password': 'पासवर्ड भूल गए',
+            'reset_password': 'पासवर्ड रीसेट करें',
+            'verify_email': 'ईमेल सत्यापित करें',
+            'verify_phone': 'फ़ोन सत्यापित करें',
+            'i_accept_terms': 'मैं स्वीकार करता हूँ',
+            'terms_and_conditions': 'नियम और शर्तें',
+            
+            # Form Labels
+            'username': 'उपयोगकर्ता नाम',
+            'password': 'पासवर्ड',
+            'confirm_password': 'पासवर्ड की पुष्टि करें',
+            'first_name': 'पहला नाम',
+            'last_name': 'अंतिम नाम',
+            'phone_number': 'फ़ोन नंबर',
+            'address': 'पता',
+            
+            # Status Labels
+            'open': 'खुला',
+            'in_progress': 'प्रगति पर है',
+            'resolved': 'हल किया गया',
+            'closed': 'बंद',
+            
+            # Home Page
+            'why_use_ecofinds': 'EcoFinds क्यों उपयोग करें?',
+            'eco_friendly_focus': 'पर्यावरण अनुकूल ध्यान',
+            'eco_friendly_description': 'हम केवल सत्यापित स्थायी और पर्यावरण जागरूक व्यवसायों की सूची बनाते हैं।',
+            'local_discovery': 'स्थानीय खोज',
+            'local_discovery_description': 'अपने पड़ोस में हरित दुकानें, कैफे और सेवाएं खोजें।',
+            'support_good_causes': 'अच्छे कारणों का समर्थन करें',
+            'support_good_causes_description': 'आपकी खरीदारी पृथ्वी और लोगों के लिए अंतर लाती है।',
+            'ready_to_make_difference': 'अंतर लाने के लिए तैयार हैं?',
+            'join_eco_conscious_shoppers': 'आज हजारों पर्यावरण जागरूक खरीदारों के साथ जुड़ें।',
+            'about_ecofinds': 'EcoFinds के बारे में',
+            'mission_statement': 'हम पर्यावरण जागरूक उपभोक्ताओं को विश्वव्यापी स्थायी व्यवसायों से जोड़ने के लिए प्रतिबद्ध हैं।',
+            'all_rights_reserved': 'सर्वाधिकार सुरक्षित।',
+            
+            # NavBar
+            'home': 'होम',
+            'browse': 'ब्राउज़ करें',
+            'about': 'हमारे बारे में',
+            'users': 'उपयोगकर्ता',
+            'expand_sidebar': 'साइडबार विस्तार करें',
+            'collapse_sidebar': 'साइडबार संक्षिप्त करें',
+            'confirm_logout': 'क्या आप वाकई लॉगआउट करना चाहते हैं?'
         },
         'gu': {
-            'welcome': 'EcoFinds માં તમારું સ્વાગત છે',
-            'search_placeholder': 'ઉત્પાદનો શોધો...',
-            'categories': 'કેટેગરીઝ',
+            # Header and Navigation
+            'welcome': 'EcoFinds માં આપનું સ્વાગત છે',
+            'search_placeholder': 'ઉત્પાદનો માટે શોધો...',
+            'categories': 'શ્રેણીઓ',
             'my_account': 'મારું એકાઉન્ટ',
             'cart': 'કાર્ટ',
             'messages': 'સંદેશા',
             'saved_items': 'સાચવેલી વસ્તુઓ',
             'dashboard': 'ડેશબોર્ડ',
             'profile': 'પ્રોફાઇલ',
-            'logout': 'લૉગ આઉટ'
+            'logout': 'લૉગ આઉટ',
+            'language': 'ભાષા',
+            
+            # Common Actions
+            'save': 'સાચવો',
+            'cancel': 'રદ કરો',
+            'delete': 'કાઢી મૂકો',
+            'edit': 'સંપાદિત કરો',
+            'view': 'જુઓ',
+            'close': 'બંધ કરો',
+            'submit': 'સબમિટ કરો',
+            'update': 'અપડેટ કરો',
+            
+            # Dashboard
+            'my_dashboard': 'મારું ડેશબોર્ડ',
+            'total_listings': 'કુલ લિસ્ટિંગ',
+            'active_listings': 'સક્રિય લિસ્ટિંગ',
+            'sold_items': 'વેચાયેલ વસ્તુઓ',
+            'total_purchases': 'કુલ ખરીદીઓ',
+            'total_sales': 'કુલ વેચાણ',
+            'unread_messages': 'અપઠાયેલ સંદેશા',
+            'user_rating': 'વપરાશકર્તા રેટિંગ',
+            'total_reviews': 'કુલ સમીક્ષાઓ',
+            
+            # Product Related
+            'products': 'ઉત્પાદનો',
+            'add_product': 'ઉત્પાદન ઉમેરો',
+            'my_listings': 'મારી લિસ્ટિંગ',
+            'browse_products': 'ઉત્પાદનો બ્રાઉઝ કરો',
+            'product_details': 'ઉત્પાદન વિગતો',
+            'price': 'કિંમત',
+            'condition': 'શરત',
+            'location': 'સ્થાન',
+            'description': 'વર્ણન',
+            'seller': 'વિક્રેતા',
+            'contact_seller': 'વિક્રેતાનો સંપર્ક કરો',
+            
+            # User Profile
+            'personal_information': 'વ્યક્તિગત માહિતી',
+            'full_name': 'પૂરું નામ',
+            'email': 'ઇમેઇલ',
+            'date_of_birth': 'જન્મ તારીખ',
+            'gender': 'લિંગ',
+            'bio': 'બાયો',
+            'joined': 'જોડાયો',
+            'status': 'સ્થિતિ',
+            'active': 'સક્રિય',
+            'rating': 'રેટિંગ',
+            'no_bio_available': 'કોઈ બાયો ઉપલબ્ધ નથી',
+            
+            # Reviews
+            'reviews': 'સમીક્ષાઓ',
+            'leave_review': 'સમીક્ષા આપો',
+            'review_comment': 'સમીક્ષા ટિપ્પણી',
+            'submit_review': 'સમીક્ષા સબમિટ કરો',
+            
+            # Disputes
+            'disputes': 'વિવાદો',
+            'file_dispute': 'વિવાદ ફાઇલ કરો',
+            'dispute_title': 'વિવાદ શીર્ષક',
+            'dispute_description': 'વિવાદ વર્ણન',
+            'submit_dispute': 'વિવાદ સબમિટ કરો',
+            
+            # Notifications
+            'notifications': 'સૂચનો',
+            'mark_all_read': 'બધાને વાંચેલ તરીકે ચિહ્નિત કરો',
+            'unread_notifications': 'અપઠાયેલ સૂચનો',
+            'loading': 'લોડ થઈ રહ્યું છે',
+            'no_notifications': 'કોઈ સૂચનો નથી',
+            'related_product': 'સંબંધિત ઉત્પાદન',
+            'view_all_notifications': 'બધી સૂચનો જુઓ',
+            'failed_mark_all_read': 'બધી સૂચનોને વાંચેલ તરીકે ચિહ્નિત કરવામાં નિષ્ફળ',
+            'days_ago': 'દિવસ પહેલાં',
+            'hours_ago': 'કલાક પહેલાં',
+            'minutes_ago': 'મિનિટ પહેલાં',
+            'just_now': 'હમણાં',
+            
+            # Chats/Messages
+            'no_conversations_yet': 'હજુ સુધી કોઈ વાર્તાલાપ નથી',
+            'conversations_will_appear_here': 'તમારા અન્ય વપરાશકર્તાઓ સાથેના વાર્તાલાપ અહીં દેખાશે.',
+            'general_conversation': 'સામાન્ય વાર્તાલાપ',
+            'failed_load_conversations': 'વાર્તાલાપ લોડ કરવામાં નિષ્ફળ. કૃપા કરીને ફરી પ્રયત્ન કરો.',
+            
+            # Saved Searches
+            'saved_searches': 'સાચવેલી શોધો',
+            'save_search': 'શોધ સાચવો',
+            
+            # Price Alerts
+            'price_alerts': 'કિંમત ચેતવણીઓ',
+            'create_alert': 'ચેતવણી બનાવો',
+            'target_price': 'લક્ષ્ય કિંમત',
+            
+            # Authentication
+            'login': 'લૉગ ઇન કરો',
+            'signup': 'સાઇન અપ કરો',
+            'forgot_password': 'પાસવર્ડ ભૂલી ગયા',
+            'reset_password': 'પાસવર્ડ રીસેટ કરો',
+            'verify_email': 'ઇમેઇલ ચકાસો',
+            'verify_phone': 'ફોન ચકાસો',
+            'i_accept_terms': 'હું સ્વીકારું છું',
+            'terms_and_conditions': 'નિયમો અને શરતો',
+            
+            # Form Labels
+            'username': 'વપરાશકર્તા નામ',
+            'password': 'પાસવર્ડ',
+            'confirm_password': 'પાસવર્ડની પુષ્ટિ કરો',
+            'first_name': 'પ્રથમ નામ',
+            'last_name': 'છેલ્લું નામ',
+            'phone_number': 'ફોન નંબર',
+            'address': 'સરનામું',
+            
+            # Status Labels
+            'open': 'ખોલો',
+            'in_progress': 'પ્રગતિ પર છે',
+            'resolved': 'ઉકેલાયો',
+            'closed': 'બંધ',
+            
+            # Home Page
+            'why_use_ecofinds': 'EcoFinds શા માટે વાપરવું?',
+            'eco_friendly_focus': 'પર્યાવરણ મૈત્રીપૂર્ણ ધ્યાન',
+            'eco_friendly_description': 'અમે ફક્ત ચકાસાયેલ ટકાઉ અને પર્યાવરણ મૈત્રીપૂર્ણ વ્યવસાયોની યાદી કરીએ છીએ.',
+            'local_discovery': 'સ્થાનિક શોધ',
+            'local_discovery_description': 'તમારા પડોશમાં લીલી દુકાનો, કેફે અને સેવાઓ શોધો.',
+            'support_good_causes': 'સારા કારણોને આધાર આપો',
+            'support_good_causes_description': 'તમારી ખરીદી પૃથ્વી અને લોકો માટે તફાવત લાવે છે.',
+            'ready_to_make_difference': 'તફાવત લાવવા માટે તૈયાર છો?',
+            'join_eco_conscious_shoppers': 'આજે હજારો પર્યાવરણ મૈત્રીપૂર્ણ ખરીદદારો સાથે જોડાઓ.',
+            'about_ecofinds': 'EcoFinds વિશે',
+            'mission_statement': 'અમે પર્યાવરણ મૈત્રીપૂર્ણ ગ્રાહકોને વિશ્વવ્યાપી ટકાઉ વ્યવસાયો સાથે જોડવાનું મિશન ધરાવીએ છીએ.',
+            'all_rights_reserved': 'સર્વાધિકાર સુરક્ષિત',
+            
+            # NavBar
+            'home': 'હોમ',
+            'browse': 'બ્રાઉઝ કરો',
+            'about': 'અમારા વિશે',
+            'users': 'વપરાશકર્તાઓ',
+            'expand_sidebar': 'સાઇડબાર વિસ્તારો',
+            'collapse_sidebar': 'સાઇડબાર સંકુચિત કરો',
+            'confirm_logout': 'શું તમે ખરેખર લૉગઆઉટ કરવા માંગો છો?'
         }
     }
     

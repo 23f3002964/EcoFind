@@ -3,10 +3,10 @@
     <!-- Hero Section -->
     <header class="bg-success text-white py-5">
       <div class="container text-center">
-        <h1 class="display-4 fw-bold">Discover Local Eco-Friendly Shops</h1>
-        <p class="lead">EcoFinds helps you find sustainable businesses around you.</p>
+        <h1 class="display-4 fw-bold">{{ $t('welcome') }}</h1>
+        <p class="lead">{{ $t('browse_products') }}</p>
         <router-link to="/products" class="btn btn-light btn-lg mt-3">
-          <i class="bi bi-search me-2"></i>Explore Sustainable Products
+          <i class="bi bi-search me-2"></i>{{ $t('browse_products') }}
         </router-link>
       </div>
     </header>
@@ -14,22 +14,22 @@
     <!-- Features Section -->
     <section id="features" class="py-5 bg-light">
       <div class="container">
-        <h2 class="text-center mb-4">Why Use EcoFinds?</h2>
+        <h2 class="text-center mb-4">{{ $t('why_use_ecofinds') }}</h2>
         <div class="row text-center">
           <div class="col-md-4">
             <i class="bi bi-globe2 fs-1 text-success mb-2"></i>
-            <h5>Eco-Friendly Focus</h5>
-            <p>We list only verified sustainable and eco-conscious businesses.</p>
+            <h5>{{ $t('eco_friendly_focus') }}</h5>
+            <p>{{ $t('eco_friendly_description') }}</p>
           </div>
           <div class="col-md-4">
             <i class="bi bi-geo-alt fs-1 text-success mb-2"></i>
-            <h5>Local Discovery</h5>
-            <p>Find green shops, cafes, and services in your neighborhood.</p>
+            <h5>{{ $t('local_discovery') }}</h5>
+            <p>{{ $t('local_discovery_description') }}</p>
           </div>
           <div class="col-md-4">
             <i class="bi bi-heart fs-1 text-success mb-2"></i>
-            <h5>Support Good Causes</h5>
-            <p>Your purchases make a difference for the planet and people.</p>
+            <h5>{{ $t('support_good_causes') }}</h5>
+            <p>{{ $t('support_good_causes_description') }}</p>
           </div>
         </div>
       </div>
@@ -38,14 +38,14 @@
     <!-- Call to Action Section -->
     <section class="py-5 bg-primary text-white">
       <div class="container text-center">
-        <h2 class="mb-3">Ready to Make a Difference?</h2>
-        <p class="lead mb-4">Join thousands of eco-conscious shoppers today.</p>
+        <h2 class="mb-3">{{ $t('ready_to_make_difference') }}</h2>
+        <p class="lead mb-4">{{ $t('join_eco_conscious_shoppers') }}</p>
         <div class="d-flex justify-content-center gap-3">
           <router-link to="/signup" class="btn btn-light btn-lg">
-            <i class="bi bi-person-plus me-2"></i>Create Account
+            <i class="bi bi-person-plus me-2"></i>{{ $t('signup') }}
           </router-link>
           <router-link to="/products" class="btn btn-outline-light btn-lg">
-            <i class="bi bi-box-seam me-2"></i>Browse Products
+            <i class="bi bi-box-seam me-2"></i>{{ $t('browse_products') }}
           </router-link>
         </div>
       </div>
@@ -54,15 +54,15 @@
     <!-- About Section -->
     <section id="about" class="py-5">
       <div class="container text-center">
-        <h2>About EcoFinds</h2>
-        <p class="lead">We're on a mission to connect eco-conscious consumers with sustainable businesses worldwide.</p>
+        <h2>{{ $t('about_ecofinds') }}</h2>
+        <p class="lead">{{ $t('mission_statement') }}</p>
       </div>
     </section>
 
     <!-- Footer -->
     <footer class="bg-dark text-white text-center py-3">
       <div class="container">
-        &copy; 2025 EcoFinds. All rights reserved.
+        &copy; 2025 EcoFinds. {{ $t('all_rights_reserved') }}
       </div>
     </footer>
   </div>

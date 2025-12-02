@@ -1,13 +1,13 @@
 <template>
   <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4>Messages</h4>
+      <h4>{{ $t('messages') }}</h4>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="text-center my-5">
       <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading...</span>
+        <span class="visually-hidden">{{ $t('loading') }}...</span>
       </div>
     </div>
 
@@ -19,8 +19,8 @@
     <!-- Empty State -->
     <div v-else-if="conversations.length === 0" class="text-center py-5">
       <i class="bi bi-chat-dots" style="font-size: 3rem;"></i>
-      <h5 class="mt-3">No conversations yet</h5>
-      <p class="text-muted">Your conversations with other users will appear here.</p>
+      <h5 class="mt-3">{{ $t('no_conversations_yet') }}</h5>
+      <p class="text-muted">{{ $t('conversations_will_appear_here') }}</p>
     </div>
 
     <!-- Conversations List -->
@@ -56,7 +56,7 @@
               </div>
               <p class="mb-1">{{ conversation.last_message.message }}</p>
               <div class="d-flex justify-content-between">
-                <small class="text-muted">{{ conversation.product?.title || 'General conversation' }}</small>
+                <small class="text-muted">{{ conversation.product?.title || $t('general_conversation') }}</small>
                 <span 
                   v-if="conversation.unread_count > 0" 
                   class="badge bg-primary rounded-pill"
@@ -106,7 +106,7 @@ export default {
         this.conversations = response.data.conversations || [];
       } catch (err) {
         console.error('Error fetching chats:', err);
-        this.error = 'Failed to load conversations. Please try again.';
+        this.error = this.$t('failed_load_conversations');
       } finally {
         this.loading = false;
       }

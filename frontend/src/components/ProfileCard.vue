@@ -6,7 +6,7 @@
 
     <hr class="my-4" />
 
-    <p class="text-muted">{{ bio || 'No bio available' }}</p>
+    <p class="text-muted">{{ bio || $t('no_bio_available') }}</p>
 
     <div class="d-grid gap-2">
       <slot name="actions"></slot>

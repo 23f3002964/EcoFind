@@ -106,6 +106,62 @@ def update_profile(id):
         db.session.rollback()
         return jsonify({'error': f'An error occurred while updating profile: {str(e)}'}), 500
 
+@users_bp.route('/api/user/<int:user_id>', methods=['GET'])
+@auth_required()
+def get_user_data(user_id):
+    """Get comprehensive user data including preferred language"""
+    # Check if user is requesting their own data or is admin
+    if current_user.id != user_id and not any(role.name == 'Admin' for role in current_user.roles):
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    user = User.query.get_or_404(user_id)
+    
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'preferred_language': user.preferred_language,
+        'rating': user.rating,
+        'total_reviews': user.total_reviews,
+        'first_name': user.user_detail.first_name if user.user_detail else None,
+        'last_name': user.user_detail.last_name if user.user_detail else None,
+        'phone_number': user.user_detail.phone_number if user.user_detail else None,
+        'address': user.user_detail.address if user.user_detail else None,
+        'dob': user.user_detail.dob.isoformat() if user.user_detail and user.user_detail.dob else None,
+        'bio': user.user_detail.bio if user.user_detail else None,
+        'gender': user.user_detail.gender if user.user_detail else None,
+        'created_at': user.user_detail.created_at.isoformat() if user.user_detail else None,
+        'updated_at': user.user_detail.updated_at.isoformat() if user.user_detail else None
+    }), 200
+
+@users_bp.route('/api/user/language', methods=['PUT'])
+@auth_required()
+def update_user_language():
+    """Update user's preferred language"""
+    data = request.get_json()
+    
+    if not data or 'preferred_language' not in data:
+        return jsonify({'error': 'preferred_language is required'}), 400
+    
+    language = data['preferred_language']
+    valid_languages = ['en', 'hi', 'gu']
+    
+    if language not in valid_languages:
+        return jsonify({'error': f'Invalid language. Must be one of: {valid_languages}'}), 400
+    
+    try:
+        # Update user's preferred language
+        current_user.preferred_language = language
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Language preference updated successfully',
+            'preferred_language': language
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'An error occurred while updating language preference: {str(e)}'}), 500
+
 @users_bp.route('/api/dashboard', methods=['GET'])
 @auth_required()
 def get_dashboard():

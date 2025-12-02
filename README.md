@@ -9,13 +9,18 @@
 - **User Profiles**: View seller profiles and ratings to build trust.
 - **Location-Based Search**: Find items available near you.
 - **Direct Messaging**: Connect with buyers or sellers via built-in messaging.
+- **Advanced Product Discovery**: Enhanced browsing with filtering, sorting, and personalized recommendations
+- **Auction System**: Bid on items or list your own auction-style products
+- **Trust & Safety**: User ratings, reviews, and dispute resolution mechanisms
+- **Admin Panel**: Comprehensive administration tools for platform management
+- **Multi-Language Support**: Available in English, Hindi, and Gujarati
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Vue.js  
-- **Backend**: Flask (Python)  
-- **Database**: *(Add your database here – e.g., PostgreSQL, MongoDB, SQLite)*  
-- **APIs**: *(Mention any APIs used – e.g., location APIs)*
+- **Frontend**: Vue.js with Bootstrap
+- **Backend**: Flask (Python) with SQLAlchemy
+- **Database**: SQLite (development), PostgreSQL (production ready)
+- **APIs**: RESTful API architecture with comprehensive endpoints
 
 ## 🚀 Getting Started
 
@@ -23,6 +28,7 @@
 
 - Python 3.8+
 - Node.js and npm
+- Redis (for caching)
 - (Optional) Virtual environment tool like `venv`
 
 ---
@@ -65,14 +71,14 @@
     cd ../frontend
     ```
 
-2. Serve index file :
+2. Install dependencies and serve:
 
     ```bash
-    By clicking GO Live
+    npm install
+    npm run serve
     ```
 
-
-Open your browser and visit:  http://localhost:5500
+Open your browser and visit: http://localhost:8080
 
 ---
 
@@ -85,7 +91,7 @@ Open your browser and visit:  http://localhost:5500
 
 ## 🤝 Contributing
 
-Pull requests are welcome! For major changes, please open an issue first to discuss what you’d like to change.
+Pull requests are welcome! For major changes, please open an issue first to discuss what you'd like to change.
 
 ---
 
