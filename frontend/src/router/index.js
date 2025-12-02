@@ -239,8 +239,8 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.meta.requiresAuth;
   const requiredRole = to.meta.requiredRole;
 
-  const isAuthenticated = store.state.isAuthenticated;
-  const userRole = store.state.userRole;
+  const isAuthenticated = store.getters.isAuthenticated;
+  const userRole = store.getters.userRole;
 
   if (requiresAuth) {
     if (!isAuthenticated) {
