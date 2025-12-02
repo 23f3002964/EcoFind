@@ -13,6 +13,8 @@ from backend.blueprints.users import users_bp
 from backend.blueprints.admin import admin_bp
 from backend.blueprints.cart import cart_bp
 from backend.blueprints.misc import misc_bp
+from backend.blueprints.messaging import messaging_bp
+from backend.blueprints.reviews import reviews_bp
 
 mail = Mail()
 
@@ -34,6 +36,8 @@ def createApp():
     app.register_blueprint(admin_bp)
     app.register_blueprint(cart_bp)
     app.register_blueprint(misc_bp)
+    app.register_blueprint(messaging_bp)
+    app.register_blueprint(reviews_bp)
     
     # Initialize auth blueprint with app and datastore
     init_auth_blueprint(app, datastore)
