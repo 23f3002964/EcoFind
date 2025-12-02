@@ -10,15 +10,28 @@ import SignupView from '@/views/SignupView.vue'
 import ForgotPassword from '../views/ForgotPassword.vue';
 import ResetPassword from '../views/ResetPassword.vue';
 
+// Products
+import ProductsView from '@/views/ProductsView.vue'
+import AddProductView from '@/views/AddProductView.vue'
+import ProductDetailView from '@/views/ProductDetailView.vue'
+import AuctionDetailView from '@/views/AuctionDetailView.vue'
+
+// Chat
+import ChatView from '@/views/ChatView.vue'
+
 // User
 import UserDashboardView from '@/views/User/DashboardView.vue'
 import UserProfileView from '@/views/User/ProfileView.vue'
+import MyListingsView from '@/views/User/MyListingsView.vue'
+import CartView from '@/views/User/CartView.vue'
+import PurchasesView from '@/views/User/PurchasesView.vue'
 import Unauthorized from '@/components/Unauthorized.vue'
 
 // Admin 
 import AdminDashboardView from '@/views/Admin/DashboardView.vue'
 import AdminProfileView from '@/views/Admin/ProfileView.vue'
 import AdminUserView from '@/views/Admin/UserView.vue'
+import ComplaintsView from '@/views/Admin/ComplaintsView.vue'
 
 
 const routes = [
@@ -42,7 +55,28 @@ const routes = [
     name: 'home',
     component: HomeView
   },
-    {
+  {
+    path: '/products',
+    name: 'products',
+    component: ProductsView
+  },
+  {
+    path: '/add-product',
+    name: 'addProduct',
+    component: AddProductView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/product/:id',
+    name: 'productDetail',
+    component: ProductDetailView
+  },
+  {
+    path: '/auction/:id',
+    name: 'auctionDetail',
+    component: AuctionDetailView
+  },
+  {
     path: '/about',
     name: 'about',
     // route level code-splitting
@@ -65,6 +99,12 @@ const routes = [
 
   { path: '/forgot-password', component: ForgotPassword },
   { path: '/reset-password/:token', component: ResetPassword },
+  {
+    path: '/chat/:chatId',
+    name: 'chat',
+    component: ChatView,
+    meta: { requiresAuth: true }
+  },
 
 
   // ROle: User's Routes
@@ -77,6 +117,21 @@ const routes = [
     path: '/user/:userId/profile',
     name: 'userProfile',
     component: UserProfileView
+  },
+  {
+    path: '/user/:userId/listings',
+    name: 'myListings',
+    component: MyListingsView
+  },
+  {
+    path: '/user/:userId/cart',
+    name: 'cart',
+    component: CartView
+  },
+  {
+    path: '/user/:userId/purchases',
+    name: 'purchases',
+    component: PurchasesView
   },
 
 
@@ -95,6 +150,11 @@ const routes = [
     path: '/admin/:userId/profile',
     name: 'adminProfile',
     component: AdminProfileView
+  },
+  {
+    path: '/admin/:userId/complaints',
+    name: 'adminComplaints',
+    component: ComplaintsView
   },
 ]
 
