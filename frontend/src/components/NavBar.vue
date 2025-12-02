@@ -19,7 +19,7 @@
       <!-- Brand Section -->
       <div class="d-flex align-items-center justify-content-center py-2 border-bottom">
         <i class="bi bi-box me-2 fs-4"></i>
-        <span v-if="!isCollapsed" class="fw-bold fs-5">MyBrand</span>
+        <span v-if="!isCollapsed" class="fw-bold fs-5">EcoFinds</span>
       </div>
 
 
@@ -47,6 +47,18 @@
           <i class="bi bi-house-door me-2"></i>
           <span v-if="!isCollapsed">Dashboard</span>
         </router-link>
+        <router-link to="/products" class="nav-link d-flex align-items-center">
+          <i class="bi bi-search me-2"></i>
+          <span v-if="!isCollapsed">Browse</span>
+        </router-link>
+        <router-link to="/saved-searches" class="nav-link d-flex align-items-center">
+          <i class="bi bi-bookmark me-2"></i>
+          <span v-if="!isCollapsed">Saved Searches</span>
+        </router-link>
+        <router-link to="/price-alerts" class="nav-link d-flex align-items-center">
+          <i class="bi bi-bell me-2"></i>
+          <span v-if="!isCollapsed">Price Alerts</span>
+        </router-link>
         <router-link :to="`/user/${userId}/profile`" class="nav-link d-flex align-items-center">
           <i class="bi bi-person me-2"></i>
           <span v-if="!isCollapsed">Profile</span>
@@ -58,6 +70,10 @@
         <router-link to="/" class="nav-link d-flex align-items-center">
           <i class="bi bi-house me-2"></i>
           <span v-if="!isCollapsed">Home</span>
+        </router-link>
+        <router-link to="/products" class="nav-link d-flex align-items-center">
+          <i class="bi bi-search me-2"></i>
+          <span v-if="!isCollapsed">Browse</span>
         </router-link>
         <router-link to="/about" class="nav-link d-flex align-items-center">
           <i class="bi bi-info-circle me-2"></i>

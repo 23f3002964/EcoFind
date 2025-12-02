@@ -14,6 +14,8 @@ import EditProductView from '@/views/EditProductView.vue';
 import ConfirmAuctionSaleView from '@/views/ConfirmAuctionSaleView.vue';
 import MyBidsView from '@/views/MyBidsView.vue';
 import NotificationsView from '@/views/NotificationsView.vue';
+import SavedSearchesView from '@/views/SavedSearchesView.vue';
+import PriceAlertsView from '@/views/PriceAlertsView.vue';
 
 // Products
 import ProductsView from '@/views/ProductsView.vue'
@@ -93,6 +95,18 @@ const routes = [
     path: '/notifications',
     name: 'notifications',
     component: NotificationsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/saved-searches',
+    name: 'savedSearches',
+    component: SavedSearchesView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/price-alerts',
+    name: 'priceAlerts',
+    component: PriceAlertsView,
     meta: { requiresAuth: true }
   },
   {

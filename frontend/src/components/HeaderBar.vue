@@ -1,6 +1,13 @@
 <template>
   <div class="top-header d-flex justify-content-between align-items-center px-4 py-2 border-bottom bg-white">
-    <div></div> <!-- Spacer for left alignment -->
+    <div class="d-flex align-items-center gap-3">
+      <router-link to="/saved-searches" class="btn btn-outline-primary btn-sm" v-if="$store.state.isAuthenticated">
+        <i class="bi bi-bookmark"></i> Saved Searches
+      </router-link>
+      <router-link to="/price-alerts" class="btn btn-outline-success btn-sm" v-if="$store.state.isAuthenticated">
+        <i class="bi bi-bell"></i> Price Alerts
+      </router-link>
+    </div>
     
     <div class="d-flex align-items-center gap-3">
       <NotificationBell v-if="$store.state.isAuthenticated" />

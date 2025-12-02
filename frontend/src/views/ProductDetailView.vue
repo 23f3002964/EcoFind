@@ -1,24 +1,24 @@
 <template>
   <div class="container my-4">
-    <!-- Loading State -->
+    <!-- Loading State - Shown while fetching product details -->
     <div v-if="loading" class="text-center my-5">
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
     </div>
 
-    <!-- Error State -->
+    <!-- Error State - Shown when product loading fails -->
     <div v-else-if="error" class="alert alert-danger">
       {{ error }}
     </div>
 
-    <!-- Product Detail -->
+    <!-- Product Detail - Main content area -->
     <div v-else-if="product" class="row">
-      <!-- Left Column - Images -->
+      <!-- Left Column - Product Images Gallery -->
       <div class="col-lg-6 mb-4">
         <div class="card">
           <div class="card-body">
-            <!-- Main Image -->
+            <!-- Main Product Image -->
             <div class="text-center mb-3">
               <img 
                 :src="currentImage" 
@@ -28,7 +28,7 @@
               >
             </div>
 
-            <!-- Thumbnail Images -->
+            <!-- Thumbnail Images - Click to change main image -->
             <div v-if="product.images && product.images.length > 1" class="d-flex flex-wrap justify-content-center gap-2">
               <img 
                 v-for="(image, index) in product.images" 
@@ -42,6 +42,7 @@
               >
             </div>
 
+            <!-- No Images Placeholder -->
             <div v-else-if="(!product.images || product.images.length === 0)" class="text-center py-5">
               <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
               <p class="text-muted mt-2">No images available</p>
@@ -50,10 +51,11 @@
         </div>
       </div>
 
-      <!-- Right Column - Details -->
+      <!-- Right Column - Product Details and Actions -->
       <div class="col-lg-6">
         <div class="card">
           <div class="card-body">
+            <!-- Product Header - Title, Price, Back Button -->
             <div class="d-flex justify-content-between align-items-start mb-3">
               <div>
                 <h4 class="card-title">{{ product.title }}</h4>
@@ -62,24 +64,25 @@
                   <span v-if="product.is_auction" class="badge bg-warning">Auction</span>
                 </div>
               </div>
+              <!-- Back button to return to product list -->
               <button class="btn btn-outline-secondary" @click="$router.back()">
                 <i class="bi bi-arrow-left"></i>
               </button>
             </div>
 
-            <!-- Category -->
+            <!-- Category Information -->
             <div class="mb-3">
               <small class="text-muted">Category:</small>
               <div>{{ product.category.name }}</div>
             </div>
 
-            <!-- Condition -->
+            <!-- Condition Information -->
             <div class="mb-3">
               <small class="text-muted">Condition:</small>
               <div>{{ product.condition }}</div>
             </div>
 
-            <!-- Seller Info -->
+            <!-- Seller Information Panel -->
             <div class="mb-3 p-3 bg-light rounded">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -93,13 +96,13 @@
               </div>
             </div>
 
-            <!-- Description -->
+            <!-- Product Description -->
             <div class="mb-4">
               <h6>Description</h6>
               <p>{{ product.description }}</p>
             </div>
 
-            <!-- Additional Details -->
+            <!-- Additional Product Details Grid -->
             <div class="row mb-4">
               <div class="col-md-6 mb-3">
                 <small class="text-muted">Brand:</small>
@@ -117,11 +120,20 @@
                 <small class="text-muted">Location:</small>
                 <div>{{ product.location || 'Not specified' }}</div>
               </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Views:</small>
+                <div>{{ product.views }}</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Posted:</small>
+                <div>{{ formatDate(product.created_at) }}</div>
+              </div>
             </div>
 
-            <!-- Auction Specific Info -->
+            <!-- Auction Specific Section - Only shown for auction items -->
             <div v-if="product.is_auction" class="border rounded p-3 mb-4">
               <h6>Auction Details</h6>
+              <!-- Auction Information Grid -->
               <div class="row">
                 <div class="col-md-6 mb-2">
                   <small class="text-muted">Current Bid:</small>
@@ -133,31 +145,29 @@
                 </div>
                 <div class="col-md-6 mb-2">
                   <small class="text-muted">Reserve Price:</small>
-                  <div>${{ product.reserve_price || 'Not set' }}</div>
+                  <div>{{ product.reserve_price ? `$${product.reserve_price}` : 'Not set' }}</div>
                 </div>
                 <div class="col-md-6 mb-2">
                   <small class="text-muted">Time Remaining:</small>
-                  <div :class="{ 'text-danger': isAuctionEndingSoon }">
-                    {{ auctionTimeRemaining }}
-                  </div>
+                  <div :class="getTimeRemainingClass()">{{ auctionTimeRemaining }}</div>
                 </div>
               </div>
-
-              <!-- Place Bid Form -->
-              <div class="mt-3">
+              
+              <!-- Bid Placement Form - Only for non-sellers and active auctions -->
+              <div v-if="product.seller.id !== currentUser?.id && !isAuctionEnded" class="mt-3">
                 <div class="input-group">
                   <span class="input-group-text">$</span>
                   <input 
                     type="number" 
                     class="form-control" 
-                    v-model="bidAmount" 
+                    v-model="bidAmount"
                     :min="product.current_bid + 1"
-                    step="1"
                     placeholder="Enter your bid"
                   >
+                  <!-- Place Bid Button -->
                   <button 
-                    class="btn btn-primary" 
                     type="button" 
+                    class="btn btn-success" 
                     @click="placeBid"
                     :disabled="placingBid"
                   >
@@ -165,14 +175,24 @@
                     Place Bid
                   </button>
                 </div>
+                <!-- Bid Error Messages -->
                 <div v-if="bidError" class="text-danger small mt-1">{{ bidError }}</div>
+              </div>
+              
+              <!-- Auction Ended Message - Shown when auction has finished -->
+              <div v-if="isAuctionEnded" class="alert alert-info mt-3 mb-0">
+                <strong>This auction has ended.</strong>
+                <div v-if="product.current_bid > 0">
+                  Winning bid: ${{ product.current_bid }}
+                </div>
               </div>
             </div>
 
-            <!-- Action Buttons -->
+            <!-- Action Buttons Section -->
             <div class="d-grid gap-2">
+              <!-- Add to Cart Button - For fixed-price items (not sold, not owned) -->
               <button 
-                v-if="!product.is_auction && !product.is_sold && product.seller.id !== currentUser.id"
+                v-if="!product.is_auction && !product.is_sold && product.seller.id !== currentUser?.id"
                 class="btn btn-success btn-lg" 
                 @click="addToCart"
                 :disabled="addingToCart"
@@ -182,17 +202,29 @@
                 {{ addingToCart ? 'Adding...' : 'Add to Cart' }}
               </button>
 
+              <!-- Chat with Seller Button - Prominently displayed for all non-owned products -->
               <button 
-                v-if="product.seller.id !== currentUser.id"
-                class="btn btn-outline-primary btn-lg" 
+                v-if="product.seller.id !== currentUser?.id"
+                class="btn btn-primary btn-lg" 
                 @click="contactSeller"
               >
                 <i class="bi bi-chat-dots me-2"></i>
                 Chat with Seller
               </button>
 
+              <!-- Create Price Alert Button - For all non-owned products -->
               <button 
-                v-if="product.seller.id === currentUser.id"
+                v-if="!product.is_auction && product.seller.id !== currentUser?.id && $store.state.isAuthenticated"
+                class="btn btn-outline-warning btn-lg" 
+                @click="createPriceAlert"
+              >
+                <i class="bi bi-bell me-2"></i>
+                Create Price Alert
+              </button>
+
+              <!-- Edit Product Button - Only for product owners -->
+              <button 
+                v-if="product.seller.id === currentUser?.id"
                 class="btn btn-outline-secondary btn-lg" 
                 @click="editProduct"
               >
@@ -226,15 +258,18 @@ export default {
   },
   computed: {
     ...mapState(['isAuthenticated', 'authData']),
+    // Current user information from store
     currentUser() {
       return this.authData ? { id: this.authData.id } : null;
     },
+    // Current image to display in main viewer
     currentImage() {
       if (!this.product || !this.product.images || this.product.images.length === 0) {
         return ''; // Will show placeholder
       }
       return this.product.images[this.currentImageIndex] || this.product.images[0];
     },
+    // Calculate and format time remaining for auctions
     auctionTimeRemaining() {
       if (!this.product || !this.product.auction_end_time) return '';
       
@@ -251,25 +286,24 @@ export default {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       
       if (days > 0) {
-        return `${days} day${days !== 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''}`;
+        return `${days}d ${hours}h`;
       } else if (hours > 0) {
-        return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        return `${hours}h ${minutes}m`;
       } else {
-        return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        return `${minutes}m`;
       }
     },
-    isAuctionEndingSoon() {
+    // Check if auction has ended
+    isAuctionEnded() {
       if (!this.product || !this.product.auction_end_time) return false;
       
       const endTime = new Date(this.product.auction_end_time);
       const now = new Date();
-      const diff = endTime - now;
-      
-      // Less than 24 hours remaining
-      return diff > 0 && diff < (24 * 60 * 60 * 1000);
+      return now > endTime;
     }
   },
   async mounted() {
+    // Load product when component mounts
     const productId = this.$route.params.id;
     if (productId) {
       await this.loadProduct(productId);
@@ -279,6 +313,7 @@ export default {
     }
   },
   methods: {
+    // Fetch product details from API
     async loadProduct(productId) {
       this.loading = true;
       this.error = '';
@@ -300,12 +335,33 @@ export default {
       }
     },
     
+    // Get CSS class for time remaining based on urgency
+    getTimeRemainingClass() {
+      if (!this.product || !this.product.auction_end_time) return '';
+      
+      const endTime = new Date(this.product.auction_end_time);
+      const now = new Date();
+      const diff = endTime - now;
+      const hours = diff / (1000 * 60 * 60);
+      
+      if (hours < 1) {
+        return 'text-danger fw-bold'; // Critical - less than 1 hour
+      } else if (hours < 24) {
+        return 'text-warning'; // Warning - less than 24 hours
+      } else {
+        return 'text-success'; // Safe - more than 24 hours
+      }
+    },
+    
+    // Place a bid on an auction item
     async placeBid() {
+      // Require authentication to place bids
       if (!this.isAuthenticated) {
         this.$router.push('/login');
         return;
       }
       
+      // Validate bid amount
       if (!this.bidAmount || this.bidAmount <= this.product.current_bid) {
         this.bidError = `Bid must be higher than $${this.product.current_bid}`;
         return;
@@ -319,17 +375,17 @@ export default {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': this.authData.token
+            'Authorization': this.authData?.token
           },
           body: JSON.stringify({ amount: parseFloat(this.bidAmount) })
         });
         
         if (response.ok) {
-          // Update the current bid in the UI
+          const result = await response.json();
+          // Update product with new bid information
           this.product.current_bid = parseFloat(this.bidAmount);
           this.bidAmount = '';
-          // Reload product to get updated info
-          await this.loadProduct(this.product.id);
+          alert('Bid placed successfully!');
         } else {
           const error = await response.json();
           this.bidError = error.error || 'Failed to place bid';
@@ -342,7 +398,9 @@ export default {
       }
     },
     
+    // Add product to user's cart
     async addToCart() {
+      // Require authentication to add to cart
       if (!this.isAuthenticated) {
         this.$router.push('/login');
         return;
@@ -355,13 +413,13 @@ export default {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': this.authData.token
+            'Authorization': this.authData?.token
           },
           body: JSON.stringify({ product_id: this.product.id })
         });
         
         if (response.ok) {
-          // Show success message or redirect to cart
+          // Show success message
           alert('Product added to cart!');
         } else {
           const error = await response.json();
@@ -375,24 +433,76 @@ export default {
       }
     },
     
+    // Initiate chat with seller (placeholder implementation)
     contactSeller() {
+      // Require authentication to contact seller
       if (!this.isAuthenticated) {
         this.$router.push('/login');
         return;
       }
       
-      // For now, we'll just show an alert. In a full implementation, this would open a chat
-      alert('Contact seller functionality would open a chat window here.');
+      // In a full implementation, this would open a chat with the seller
+      // For now, we'll show an alert with instructions
+      alert(`This would open a chat with ${this.product.seller.first_name} ${this.product.seller.last_name}. In a full implementation, you would be able to send messages directly to the seller.`);
     },
     
+    // Create a price alert for this product
+    async createPriceAlert() {
+      // Require authentication to create price alerts
+      if (!this.isAuthenticated) {
+        this.$router.push('/login');
+        return;
+      }
+      
+      // Prompt user for target price
+      const targetPrice = prompt(`Enter your target price for "${this.product.title}":`, this.product.price);
+      if (!targetPrice || isNaN(targetPrice) || parseFloat(targetPrice) <= 0) {
+        alert('Please enter a valid target price.');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${this.$store.state.backendUrl}/api/price-alerts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': this.authData?.token
+          },
+          body: JSON.stringify({
+            product_id: this.product.id,
+            target_price: parseFloat(targetPrice)
+          })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          alert('Price alert created successfully! You will be notified when the price drops to your target.');
+        } else {
+          const error = await response.json();
+          alert(error.error || 'Failed to create price alert');
+        }
+      } catch (error) {
+        console.error('Error creating price alert:', error);
+        alert('Network error. Please try again.');
+      }
+    },
+    
+    // Navigate to edit product page
     editProduct() {
       this.$router.push(`/edit-product/${this.product.id}`);
+    },
+    
+    // Format date for display
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
   }
 };
 </script>
 
 <style scoped>
+/* Thumbnail image hover effect */
 .img-thumbnail {
   transition: border-color 0.2s;
 }

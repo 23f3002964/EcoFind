@@ -180,6 +180,35 @@ class SavedSearch(db.Model):
     name = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
+class PriceAlert(db.Model):
+    """Model for price alerts - notifies users when product prices drop to target price"""
+    __tablename__ = 'pricealert'
+    
+    # Primary key for the price alert
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Foreign key to the user who created the alert
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    
+    # Foreign key to the product being monitored
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False, index=True)
+    
+    # Target price that triggers the alert
+    target_price = db.Column(db.Float, nullable=False)
+    
+    # Alert status (active, triggered, deleted)
+    status = db.Column(db.String(20), default='active', index=True)
+    
+    # Timestamp of when alert was created
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    # Timestamp of when alert was last triggered
+    triggered_at = db.Column(db.DateTime, index=True)
+    
+    # Relationships to other models
+    user = db.relationship('User', backref='price_alerts')
+    product = db.relationship('Product', backref='price_alerts')
+
 class Dispute(db.Model):
     __tablename__='dispute'
     id = db.Column(db.Integer, primary_key=True)
@@ -194,17 +223,32 @@ class Dispute(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, index=True)
 
 class Notification(db.Model):
+    """User notification model for system alerts and auction updates"""
     __tablename__ = 'notification'
+    
+    # Primary key for the notification
     id = db.Column(db.Integer, primary_key=True)
+    
+    # Foreign key to the user who receives the notification
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    
+    # Notification title (short summary)
     title = db.Column(db.String(200), nullable=False)
+    
+    # Detailed notification message
     message = db.Column(db.Text, nullable=False)
+    
+    # Read status - False means unread
     is_read = db.Column(db.Boolean, default=False, index=True)
+    
+    # Optional foreign keys to related entities
     related_product_id = db.Column(db.Integer, db.ForeignKey('product.id'), index=True)
     related_bid_id = db.Column(db.Integer, db.ForeignKey('bid.id'), index=True)
+    
+    # Timestamp of when notification was created
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     
-    # Relationships
+    # Relationships to other models
     user = db.relationship('User', backref='notifications')
     product = db.relationship('Product', backref='notifications')
     bid = db.relationship('Bid', backref='notifications')

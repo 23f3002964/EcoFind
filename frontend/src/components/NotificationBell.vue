@@ -1,5 +1,7 @@
 <template>
+  <!-- Notification dropdown menu -->
   <div class="dropdown">
+    <!-- Notification bell button with unread count badge -->
     <button 
       class="btn btn-link text-decoration-none position-relative" 
       type="button" 
@@ -7,7 +9,9 @@
       data-bs-toggle="dropdown" 
       aria-expanded="false"
     >
+      <!-- Bell icon -->
       <i class="bi bi-bell" style="font-size: 1.5rem;"></i>
+      <!-- Unread notification count badge -->
       <span 
         v-if="unreadCount > 0" 
         class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -18,9 +22,12 @@
       </span>
     </button>
     
+    <!-- Dropdown menu with notifications -->
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
+      <!-- Header with title and mark all as read button -->
       <li class="dropdown-header d-flex justify-content-between align-items-center">
         <span>Notifications</span>
+        <!-- Mark all as read button (only shown when there are unread notifications) -->
         <button 
           v-if="unreadCount > 0" 
           class="btn btn-sm btn-outline-primary" 
@@ -32,18 +39,22 @@
         </button>
       </li>
       
+      <!-- Loading state indicator -->
       <li v-if="loading" class="dropdown-item-text text-center">
         <div class="spinner-border spinner-border-sm" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </li>
       
+      <!-- Empty state message -->
       <li v-else-if="notifications.length === 0" class="dropdown-item-text text-center text-muted">
         No notifications
       </li>
       
+      <!-- Notification list -->
       <li v-else>
         <div class="list-group list-group-flush">
+          <!-- Individual notification items -->
           <a 
             v-for="notification in notifications" 
             :key="notification.id"
@@ -52,11 +63,14 @@
             :class="{ 'bg-light': !notification.is_read }"
             @click.prevent="viewNotification(notification)"
           >
+            <!-- Notification header with title and timestamp -->
             <div class="d-flex w-100 justify-content-between">
               <h6 class="mb-1">{{ notification.title }}</h6>
               <small class="text-muted">{{ formatTime(notification.created_at) }}</small>
             </div>
+            <!-- Notification message content -->
             <p class="mb-1">{{ notification.message }}</p>
+            <!-- Related product indicator -->
             <small v-if="notification.related_product_id" class="text-primary">
               <i class="bi bi-box"></i> Related product
             </small>
@@ -64,6 +78,7 @@
         </div>
       </li>
       
+      <!-- Footer with link to full notifications page -->
       <li v-if="notifications.length > 0" class="dropdown-item-text text-center border-top">
         <router-link to="/notifications" class="text-decoration-none">
           View all notifications
@@ -80,27 +95,31 @@ export default {
   name: 'NotificationBell',
   data() {
     return {
-      notifications: [],
-      unreadCount: 0,
-      loading: false,
-      markingAllRead: false
+      notifications: [],       // List of recent notifications
+      unreadCount: 0,          // Count of unread notifications
+      loading: false,          // Loading state flag
+      markingAllRead: false    // Mark all as read operation state
     };
   },
   
   async mounted() {
+    // Load initial notifications when component mounts
     await this.fetchNotifications();
-    // Set up polling for new notifications every 30 seconds
+    // Set up polling to refresh notifications every 30 seconds
     this.notificationInterval = setInterval(this.fetchNotifications, 30000);
   },
   
   beforeUnmount() {
+    // Clean up polling interval when component is destroyed
     if (this.notificationInterval) {
       clearInterval(this.notificationInterval);
     }
   },
   
   methods: {
+    // Fetch the 5 most recent notifications from the API
     async fetchNotifications() {
+      // Only fetch if user is authenticated
       if (!this.$store.state.isAuthenticated) return;
       
       try {
@@ -120,7 +139,9 @@ export default {
       }
     },
     
+    // Mark all notifications as read
     async markAllAsRead() {
+      // Prevent multiple simultaneous requests
       if (this.markingAllRead) return;
       
       try {
@@ -131,7 +152,7 @@ export default {
           }
         });
         
-        // Update local state
+        // Update local state to reflect all notifications as read
         this.notifications.forEach(n => n.is_read = true);
         this.unreadCount = 0;
       } catch (error) {
@@ -142,8 +163,9 @@ export default {
       }
     },
     
+    // Handle clicking on a notification
     async viewNotification(notification) {
-      // Mark as read
+      // Mark as read if it's currently unread
       if (!notification.is_read) {
         try {
           await axios.put(`/api/notifications/${notification.id}/read`, {}, {
@@ -160,12 +182,13 @@ export default {
         }
       }
       
-      // If notification is related to a product, navigate to it
+      // If notification is related to a product, navigate to that product
       if (notification.related_product_id) {
         this.$router.push(`/product/${notification.related_product_id}`);
       }
     },
     
+    // Format timestamp for display (e.g., "5m ago", "2h ago")
     formatTime(dateString) {
       const date = new Date(dateString);
       const now = new Date();
@@ -189,10 +212,12 @@ export default {
 </script>
 
 <style scoped>
+/* Dropdown menu styling */
 .dropdown-menu {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
+/* Hover effect for notification items */
 .list-group-item:hover {
   background-color: #f8f9fa !important;
 }

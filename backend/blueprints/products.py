@@ -5,6 +5,21 @@ from datetime import datetime, timedelta
 from sqlalchemy import or_, and_
 import json
 
+# Add imports for caching
+from flask_caching import Cache
+
+# Initialize cache later when app context is available
+cache = None
+
+def init_cache(app_instance):
+    """Initialize cache with the app instance."""
+    global cache
+    try:
+        cache = Cache(app_instance, config={'CACHE_TYPE': 'redis', 'CACHE_REDIS_URL': app_instance.config.get('REDIS_URL', 'redis://localhost:6379/0')})
+    except ImportError:
+        # Fallback to simple in-memory cache if redis is not available
+        cache = Cache(app_instance, config={'CACHE_TYPE': 'simple'})
+
 products_bp = Blueprint('products', __name__)
 
 @products_bp.route('/api/products', methods=['GET'])
@@ -267,7 +282,6 @@ def get_my_products():
 # ============= CATEGORY MANAGEMENT =============
 
 @products_bp.route('/api/categories', methods=['GET'])
-@cache.cached(timeout=300)  # Cache for 5 minutes
 def get_categories():
     categories = Category.query.filter_by(parent_id=None).all()
     
@@ -438,33 +452,40 @@ def confirm_auction_sale(auction_id):
 @products_bp.route('/api/products/<int:product_id>/bid', methods=['POST'])
 @auth_required()
 def place_bid(product_id):
+    """Place a bid on an auction item"""
     product = Product.query.get_or_404(product_id)
     data = request.get_json()
     bid_amount = data.get('amount')
     
+    # Validate that product is an auction
     if not product.is_auction:
         return jsonify({'error': 'Product is not an auction item'}), 400
     
+    # Prevent seller from bidding on their own product
     if product.seller_id == current_user.id:
         return jsonify({'error': 'Cannot bid on your own product'}), 400
     
+    # Check if auction has ended
     if datetime.utcnow() > product.auction_end_time:
         return jsonify({'error': 'Auction has ended'}), 400
     
+    # Validate bid amount is higher than current bid and minimum bid
     if bid_amount <= product.current_bid or bid_amount < product.minimum_bid:
         return jsonify({'error': 'Bid amount must be higher than current bid and minimum bid'}), 400
     
+    # Create new bid record
     bid = Bid(
         product_id=product_id,
         bidder_id=current_user.id,
         amount=bid_amount
     )
     
+    # Update product's current highest bid
     product.current_bid = bid_amount
     
     db.session.add(bid)
     
-    # Send notification to seller if this is the first bid or a new highest bid
+    # Send notification to seller if this is a new highest bid
     if product.current_bid == bid_amount:
         notification = Notification(
             user_id=product.seller_id,

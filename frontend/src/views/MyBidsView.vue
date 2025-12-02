@@ -1,38 +1,43 @@
 <template>
   <div class="container my-4">
+    <!-- Page header with title -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h4>My Bids</h4>
     </div>
 
-    <!-- Loading State -->
+    <!-- Loading State - Shown while fetching bids -->
     <div v-if="loading" class="text-center my-5">
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
     </div>
 
-    <!-- Error State -->
+    <!-- Error State - Shown when bid loading fails -->
     <div v-else-if="error" class="alert alert-danger">
       {{ error }}
     </div>
 
-    <!-- Empty State -->
+    <!-- Empty State - Shown when user hasn't placed any bids -->
     <div v-else-if="bids.length === 0" class="text-center py-5">
       <i class="bi bi-gavel text-muted" style="font-size: 3rem;"></i>
       <h5 class="mt-3">No bids yet</h5>
       <p class="text-muted">You haven't placed any bids on auctions.</p>
+      <!-- Link to browse auctions -->
       <router-link to="/products" class="btn btn-success">
         <i class="bi bi-search"></i> Browse Auctions
       </router-link>
     </div>
 
-    <!-- Bids List -->
+    <!-- Bids List - Display all user's bids -->
     <div v-else>
       <div class="row row-cols-1 g-4">
+        <!-- Individual bid items -->
         <div v-for="bid in bids" :key="bid.id" class="col">
           <div class="card h-100">
             <div class="card-body">
+              <!-- Product information and image -->
               <div class="d-flex">
+                <!-- Product image -->
                 <div class="flex-shrink-0 me-3">
                   <img 
                     :src="bid.product.images[0] || 'https://via.placeholder.com/100'" 
@@ -41,25 +46,32 @@
                     style="width: 100px; height: 100px; object-fit: cover;"
                   >
                 </div>
+                <!-- Product details -->
                 <div class="flex-grow-1">
+                  <!-- Product title with link to detail page -->
                   <h5 class="card-title">
                     <router-link :to="`/auction/${bid.product.id}`" class="text-decoration-none">
                       {{ bid.product.title }}
                     </router-link>
                   </h5>
                   
+                  <!-- Bid information and status -->
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
+                      <!-- Bid amount -->
                       <span class="h5 text-success mb-0">${{ bid.amount }}</span>
+                      <!-- Winning bid indicator -->
                       <span v-if="bid.is_winning" class="badge bg-success ms-2">Winning Bid</span>
                     </div>
                     <div>
+                      <!-- Auction status badges -->
                       <span v-if="bid.product.is_sold" class="badge bg-secondary">Sold</span>
                       <span v-else-if="isAuctionEnded(bid.product)" class="badge bg-info">Ended</span>
                       <span v-else class="badge bg-warning">Active</span>
                     </div>
                   </div>
                   
+                  <!-- Timestamp information -->
                   <div class="d-flex justify-content-between text-muted small">
                     <span>Placed: {{ formatDate(bid.created_at) }}</span>
                     <span v-if="bid.product.auction_end_time">
@@ -83,17 +95,19 @@ export default {
   name: 'MyBidsView',
   data() {
     return {
-      loading: true,
-      error: '',
-      bids: []
+      loading: true,      // Loading state flag
+      error: '',          // Error message
+      bids: []            // List of user's bids
     };
   },
   
   async mounted() {
+    // Load bids when component mounts
     await this.loadBids();
   },
   
   methods: {
+    // Load user's bids from the API
     async loadBids() {
       this.loading = true;
       this.error = '';
@@ -119,11 +133,13 @@ export default {
       }
     },
     
+    // Format date and time for display
     formatDate(dateString) {
       const date = new Date(dateString);
       return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     },
     
+    // Check if an auction has ended
     isAuctionEnded(product) {
       if (!product.auction_end_time) return false;
       
@@ -136,6 +152,7 @@ export default {
 </script>
 
 <style scoped>
+/* Hover effect for product title links */
 .card-title a:hover {
   color: #0d6efd !important;
 }

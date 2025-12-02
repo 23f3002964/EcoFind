@@ -6,13 +6,19 @@ from sqlalchemy import or_, and_
 import json
 
 # Add imports for caching
-try:
-    from flask_caching import Cache
-    cache = Cache(app, config={'CACHE_TYPE': 'redis', 'CACHE_REDIS_URL': app.config.get('REDIS_URL', 'redis://localhost:6379/0')})
-except ImportError:
-    # Fallback to simple in-memory cache if redis is not available
-    from flask_caching import Cache
-    cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+from flask_caching import Cache
+
+# Initialize cache later when app context is available
+cache = None
+
+def init_cache(app_instance):
+    """Initialize cache with the app instance."""
+    global cache
+    try:
+        cache = Cache(app_instance, config={'CACHE_TYPE': 'redis', 'CACHE_REDIS_URL': app_instance.config.get('REDIS_URL', 'redis://localhost:6379/0')})
+    except ImportError:
+        # Fallback to simple in-memory cache if redis is not available
+        cache = Cache(app_instance, config={'CACHE_TYPE': 'simple'})
 
 misc_bp = Blueprint('misc', __name__)
 
@@ -255,26 +261,53 @@ def search_products():
 
 @misc_bp.route('/api/recommendations', methods=['GET'])
 @auth_required()
-@cache.cached(timeout=180, key_prefix='recommendations')  # Cache for 3 minutes
 def get_recommendations():
-    # Simple recommendation based on user's saved items and purchase history
+    # Check if cache is available
+    if cache:
+        # Use cached version if available
+        cached_result = cache.get('recommendations')
+        if cached_result:
+            return cached_result
+    
+    # Enhanced recommendation algorithm based on multiple factors
+    # 1. User's saved items and purchase history
     saved_categories = db.session.query(Product.category_id).join(SavedItem).filter(SavedItem.user_id == current_user.id).distinct()
     purchased_categories = db.session.query(Product.category_id).join(Purchase).filter(Purchase.buyer_id == current_user.id).distinct()
     
-    category_ids = [cat[0] for cat in saved_categories.union(purchased_categories)]
+    # 2. User's search history (if implemented)
+    searched_categories = db.session.query(Product.category_id).join(SavedSearch).filter(SavedSearch.user_id == current_user.id).distinct()
+    
+    # Combine all category interests
+    category_ids = [cat[0] for cat in saved_categories.union(purchased_categories).union(searched_categories)]
+    
+    # 3. Get user's preferred conditions
+    preferred_conditions = db.session.query(Product.condition).join(Purchase).filter(Purchase.buyer_id == current_user.id).distinct()
+    condition_list = [cond[0] for cond in preferred_conditions]
     
     if not category_ids:
         # Fallback to popular products
         recommendations = Product.query.filter_by(is_active=True, is_sold=False).order_by(Product.views.desc()).limit(10).all()
     else:
-        recommendations = Product.query.filter(
+        # Enhanced recommendation query with multiple factors
+        query = Product.query.filter(
             Product.category_id.in_(category_ids),
             Product.is_active == True,
             Product.is_sold == False,
             Product.seller_id != current_user.id
-        ).order_by(Product.created_at.desc()).limit(10).all()
+        )
+        
+        # Apply condition preference if user has bought items before
+        if condition_list:
+            query = query.filter(Product.condition.in_(condition_list))
+            
+        # Order by multiple factors: recency, views, and seller rating
+        recommendations = query.order_by(
+            Product.created_at.desc(),  # Recently added
+            Product.views.desc(),       # Popular items
+            Product.seller.has(User.rating.desc())  # Highly rated sellers
+        ).limit(10).all()
     
-    return jsonify({
+    result = jsonify({
         'recommendations': [{
             'id': p.id,
             'title': p.title,
@@ -285,6 +318,12 @@ def get_recommendations():
             'condition': p.condition
         } for p in recommendations]
     }), 200
+    
+    # Cache the result if cache is available
+    if cache:
+        cache.set('recommendations', result, timeout=180)  # Cache for 3 minutes
+        
+    return result
 
 # ============= DASHBOARD AND ANALYTICS =============
 
@@ -390,20 +429,25 @@ def get_translations():
 @misc_bp.route('/api/notifications', methods=['GET'])
 @auth_required()
 def get_notifications():
-    """Get user's notifications"""
+    """Get user's notifications with pagination and filtering options"""
+    # Get query parameters for pagination and filtering
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     include_read = request.args.get('include_read', False, type=bool)
     
+    # Build query for user's notifications
     query = Notification.query.filter_by(user_id=current_user.id)
     
+    # Optionally filter out read notifications
     if not include_read:
         query = query.filter_by(is_read=False)
     
+    # Order by creation time (newest first) and paginate
     notifications = query.order_by(Notification.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
     
+    # Return notifications in JSON format
     return jsonify({
         'notifications': [{
             'id': n.id,
@@ -421,9 +465,11 @@ def get_notifications():
 @misc_bp.route('/api/notifications/<int:notification_id>/read', methods=['PUT'])
 @auth_required()
 def mark_notification_as_read(notification_id):
-    """Mark a notification as read"""
+    """Mark a specific notification as read"""
+    # Find notification belonging to current user
     notification = Notification.query.filter_by(id=notification_id, user_id=current_user.id).first_or_404()
     
+    # Mark as read and save to database
     notification.is_read = True
     db.session.commit()
     
@@ -432,8 +478,100 @@ def mark_notification_as_read(notification_id):
 @misc_bp.route('/api/notifications/read-all', methods=['PUT'])
 @auth_required()
 def mark_all_notifications_as_read():
-    """Mark all notifications as read"""
+    """Mark all of the user's unread notifications as read"""
+    # Update all unread notifications for current user
     Notification.query.filter_by(user_id=current_user.id, is_read=False).update({'is_read': True})
     db.session.commit()
     
     return jsonify({'message': 'All notifications marked as read'}), 200
+
+# ============= PRICE ALERTS =============
+
+@misc_bp.route('/api/price-alerts', methods=['GET'])
+@auth_required()
+def get_price_alerts():
+    """Get user's price alerts with pagination"""
+    # Get query parameters for pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    
+    # Build query for user's price alerts
+    query = PriceAlert.query.filter_by(user_id=current_user.id)
+    
+    # Order by creation time (newest first) and paginate
+    price_alerts = query.order_by(PriceAlert.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # Return price alerts in JSON format
+    return jsonify({
+        'price_alerts': [{
+            'id': pa.id,
+            'product': {
+                'id': pa.product.id,
+                'title': pa.product.title,
+                'price': pa.product.price
+            },
+            'target_price': pa.target_price,
+            'status': pa.status,
+            'created_at': pa.created_at.isoformat()
+        } for pa in price_alerts.items],
+        'total': price_alerts.total,
+        'pages': price_alerts.pages,
+        'current_page': page
+    }), 200
+
+@misc_bp.route('/api/price-alerts', methods=['POST'])
+@auth_required()
+def create_price_alert():
+    """Create a new price alert for a product"""
+    data = request.get_json()
+    
+    # Validate required fields
+    product_id = data.get('product_id')
+    target_price = data.get('target_price')
+    
+    if not product_id or not target_price:
+        return jsonify({'error': 'Product ID and target price are required'}), 400
+    
+    # Check if product exists
+    product = Product.query.get(product_id)
+    if not product:
+        return jsonify({'error': 'Product not found'}), 404
+    
+    # Check if user already has an alert for this product
+    existing_alert = PriceAlert.query.filter_by(
+        user_id=current_user.id, 
+        product_id=product_id
+    ).first()
+    
+    if existing_alert:
+        return jsonify({'error': 'You already have a price alert for this product'}), 400
+    
+    # Create new price alert
+    price_alert = PriceAlert(
+        user_id=current_user.id,
+        product_id=product_id,
+        target_price=float(target_price)
+    )
+    
+    db.session.add(price_alert)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Price alert created successfully',
+        'price_alert_id': price_alert.id
+    }), 201
+
+@misc_bp.route('/api/price-alerts/<int:alert_id>', methods=['DELETE'])
+@auth_required()
+def delete_price_alert(alert_id):
+    """Delete a price alert"""
+    # Find price alert belonging to current user
+    price_alert = PriceAlert.query.filter_by(id=alert_id, user_id=current_user.id).first_or_404()
+    
+    # Delete the price alert
+    db.session.delete(price_alert)
+    db.session.commit()
+    
+    return jsonify({'message': 'Price alert deleted successfully'}), 200

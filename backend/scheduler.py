@@ -1,23 +1,27 @@
 """
 Background task scheduler for the EcoFinds application.
+Handles periodic tasks like sending auction notifications and price alerts.
 """
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from backend.utils.notifications import send_auction_ending_soon_notifications, send_auction_ended_notifications
+from backend.utils.notifications import send_auction_ending_soon_notifications, send_auction_ended_notifications, send_price_alert_notifications
 import atexit
 
 def init_scheduler(app):
     """
-    Initialize the background scheduler.
+    Initialize the background scheduler for periodic tasks.
     
     Args:
         app (Flask): Flask application instance
+        
+    Returns:
+        BackgroundScheduler: The initialized scheduler instance
     """
-    # Create scheduler
+    # Create background scheduler instance
     scheduler = BackgroundScheduler()
     
-    # Add jobs
+    # Add job to send notifications for auctions ending soon (runs every hour)
     scheduler.add_job(
         func=send_auction_ending_soon_notifications,
         trigger=IntervalTrigger(hours=1),  # Run every hour
@@ -26,6 +30,7 @@ def init_scheduler(app):
         replace_existing=True
     )
     
+    # Add job to send notifications for auctions that have ended (runs every 30 minutes)
     scheduler.add_job(
         func=send_auction_ended_notifications,
         trigger=IntervalTrigger(minutes=30),  # Run every 30 minutes
@@ -34,13 +39,22 @@ def init_scheduler(app):
         replace_existing=True
     )
     
-    # Start the scheduler
+    # Add job to check for price alerts (runs every 2 hours)
+    scheduler.add_job(
+        func=send_price_alert_notifications,
+        trigger=IntervalTrigger(hours=2),  # Run every 2 hours
+        id='price_alerts',
+        name='Check and send price alert notifications',
+        replace_existing=True
+    )
+    
+    # Start the scheduler in the background
     scheduler.start()
     
-    # Shut down the scheduler when exiting the app
+    # Ensure scheduler shuts down cleanly when app exits
     atexit.register(lambda: scheduler.shutdown())
     
-    # Store scheduler in app for potential future use
+    # Store scheduler reference in app for potential future use
     app.scheduler = scheduler
     
     return scheduler

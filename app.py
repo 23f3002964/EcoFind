@@ -8,7 +8,7 @@ from flask_mail import Mail
 
 # Import blueprints
 from backend.blueprints.auth import auth_bp, init_auth_blueprint
-from backend.blueprints.products import products_bp
+from backend.blueprints.products import products_bp, init_cache as init_products_cache
 from backend.blueprints.users import users_bp
 from backend.blueprints.admin import admin_bp
 from backend.blueprints.cart import cart_bp
@@ -41,6 +41,9 @@ def createApp():
     app.register_blueprint(misc_bp)
     app.register_blueprint(messaging_bp)
     app.register_blueprint(reviews_bp)
+    
+    # Initialize caches
+    init_products_cache(app)
     
     # Initialize auth blueprint with app and datastore
     init_auth_blueprint(app, datastore)

@@ -3,6 +3,7 @@ Notification utility functions for the EcoFinds application.
 """
 
 from backend.models import Notification, db
+from datetime import datetime
 
 def send_notification(user_id, title, message, related_product_id=None, related_bid_id=None):
     """
@@ -18,6 +19,7 @@ def send_notification(user_id, title, message, related_product_id=None, related_
     Returns:
         Notification: The created notification object
     """
+    # Create a new notification record
     notification = Notification(
         user_id=user_id,
         title=title,
@@ -26,6 +28,7 @@ def send_notification(user_id, title, message, related_product_id=None, related_
         related_bid_id=related_bid_id
     )
     
+    # Save to database
     db.session.add(notification)
     db.session.commit()
     
@@ -46,6 +49,7 @@ def send_auction_ending_soon_notifications():
         Product.auction_end_time > datetime.utcnow()
     ).all()
     
+    # Send notifications to all bidders for each soon-ending auction
     for auction in soon_ending_auctions:
         # Get all bidders for this auction
         bids = Bid.query.filter_by(product_id=auction.id).all()
@@ -75,6 +79,7 @@ def send_auction_ended_notifications():
         Product.auction_end_time > datetime.utcnow() - timedelta(hours=1)
     ).all()
     
+    # Process each ended auction
     for auction in recently_ended_auctions:
         # Get winning bidder
         winning_bid = Bid.query.filter_by(
@@ -82,7 +87,7 @@ def send_auction_ended_notifications():
             amount=auction.current_bid
         ).first()
         
-        # Notify seller
+        # Notify seller about auction ending
         send_notification(
             user_id=auction.seller_id,
             title="Your auction has ended",
@@ -90,7 +95,7 @@ def send_auction_ended_notifications():
             related_product_id=auction.id
         )
         
-        # Notify winning bidder
+        # Notify winning bidder about their victory
         if winning_bid:
             send_notification(
                 user_id=winning_bid.bidder_id,
@@ -100,7 +105,7 @@ def send_auction_ended_notifications():
                 related_bid_id=winning_bid.id
             )
         
-        # Notify other bidders
+        # Notify other bidders about auction ending
         other_bids = Bid.query.filter(
             Bid.product_id == auction.id,
             Bid.id != (winning_bid.id if winning_bid else None)
@@ -113,3 +118,33 @@ def send_auction_ended_notifications():
                 message=f"The auction for '{auction.title}' has ended. Unfortunately, your bid was not the winning bid.",
                 related_product_id=auction.id
             )
+
+def send_price_alert_notifications():
+    """
+    Send notifications when product prices drop to or below user's target prices.
+    This function should be called periodically by a background task.
+    """
+    from backend.models import Product, PriceAlert
+    
+    # Find active price alerts where product price is <= target price
+    alerts_to_trigger = db.session.query(PriceAlert).join(Product).filter(
+        PriceAlert.status == 'active',
+        Product.price <= PriceAlert.target_price
+    ).all()
+    
+    # Send notifications for each triggered alert
+    for alert in alerts_to_trigger:
+        # Update alert status to prevent duplicate notifications
+        alert.status = 'triggered'
+        alert.triggered_at = datetime.utcnow()
+        
+        # Send notification to user
+        send_notification(
+            user_id=alert.user_id,
+            title="Price Alert Triggered!",
+            message=f"Great news! The price for '{alert.product.title}' has dropped to ${alert.product.price}, which is at or below your target price of ${alert.target_price}.",
+            related_product_id=alert.product_id
+        )
+    
+    # Commit all changes
+    db.session.commit()
