@@ -263,3 +263,111 @@ def get_my_products():
         'pages': products.pages,
         'current_page': page
     }), 200
+
+# ============= CATEGORY MANAGEMENT =============
+
+@products_bp.route('/api/categories', methods=['GET'])
+@cache.cached(timeout=300)  # Cache for 5 minutes
+def get_categories():
+    categories = Category.query.filter_by(parent_id=None).all()
+    
+    return jsonify({
+        'categories': [{
+            'id': cat.id,
+            'name': cat.name,
+            'description': cat.description,
+            'subcategories': [{
+                'id': sub.id,
+                'name': sub.name,
+                'description': sub.description
+            } for sub in cat.subcategories]
+        } for cat in categories]
+    }), 200
+
+@products_bp.route('/api/categories', methods=['POST'])
+@auth_required()
+def create_category():
+    # Check if user is admin
+    if not any(role.name == 'Admin' for role in current_user.roles):
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    data = request.get_json()
+    
+    category = Category(
+        name=data['name'],
+        description=data.get('description'),
+        parent_id=data.get('parent_id')
+    )
+    
+    db.session.add(category)
+    db.session.commit()
+    
+    return jsonify({'message': 'Category created successfully', 'category_id': category.id}), 201
+
+# ============= AUCTION SYSTEM =============
+
+@products_bp.route('/api/products/<int:product_id>/bid', methods=['POST'])
+@auth_required()
+def place_bid(product_id):
+    product = Product.query.get_or_404(product_id)
+    data = request.get_json()
+    bid_amount = data.get('amount')
+    
+    if not product.is_auction:
+        return jsonify({'error': 'Product is not an auction item'}), 400
+    
+    if product.seller_id == current_user.id:
+        return jsonify({'error': 'Cannot bid on your own product'}), 400
+    
+    if datetime.utcnow() > product.auction_end_time:
+        return jsonify({'error': 'Auction has ended'}), 400
+    
+    if bid_amount <= product.current_bid or bid_amount < product.minimum_bid:
+        return jsonify({'error': 'Bid amount must be higher than current bid and minimum bid'}), 400
+    
+    bid = Bid(
+        product_id=product_id,
+        bidder_id=current_user.id,
+        amount=bid_amount
+    )
+    
+    product.current_bid = bid_amount
+    
+    db.session.add(bid)
+    db.session.commit()
+    
+    return jsonify({'message': 'Bid placed successfully'}), 201
+
+@products_bp.route('/api/products/<int:product_id>/bids', methods=['GET'])
+def get_product_bids(product_id):
+    bids = Bid.query.filter_by(product_id=product_id).order_by(Bid.created_at.desc()).all()
+    
+    return jsonify({
+        'bids': [{
+            'id': bid.id,
+            'bidder': bid.bidder.username,
+            'amount': bid.amount,
+            'created_at': bid.created_at.isoformat()
+        } for bid in bids]
+    }), 200
+
+@products_bp.route('/api/my-bids', methods=['GET'])
+@auth_required()
+def get_my_bids():
+    bids = Bid.query.filter_by(bidder_id=current_user.id).order_by(Bid.created_at.desc()).all()
+    
+    return jsonify({
+        'bids': [{
+            'id': bid.id,
+            'product': {
+                'id': bid.product.id,
+                'title': bid.product.title,
+                'current_bid': bid.product.current_bid,
+                'auction_end_time': bid.product.auction_end_time.isoformat() if bid.product.auction_end_time else None,
+                'is_sold': bid.product.is_sold
+            },
+            'amount': bid.amount,
+            'is_winning': bid.amount == bid.product.current_bid,
+            'created_at': bid.created_at.isoformat()
+        } for bid in bids]
+    }), 200
