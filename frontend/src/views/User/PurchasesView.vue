@@ -34,7 +34,7 @@
             <div class="card-header d-flex justify-content-between align-items-center">
               <div>
                 <strong>Order #{{ purchase.id }}</strong>
-                <small class="text-muted ms-2">{{ formatDate(purchase.created_at) }}</small>
+                <small class="text-muted ms-2">{{ formatDate(purchase.purchase_date) }}</small>
               </div>
               <span class="badge" :class="getStatusBadgeClass(purchase.status)">
                 {{ purchase.status }}
@@ -44,21 +44,20 @@
             <div class="card-body">
               <div class="row">
                 <div class="col-md-8">
-                  <div v-for="item in purchase.items" :key="item.id" class="d-flex mb-3">
+                  <div class="d-flex mb-3" v-for="item in getPurchaseItems(purchase)" :key="item.id">
                     <div class="flex-shrink-0">
                       <img 
-                        :src="item.product.image_url || 'https://via.placeholder.com/80'" 
+                        :src="getProductImage(item)" 
                         class="img-fluid rounded" 
-                        alt="Product image"
+                        :alt="item.title"
                         style="width: 80px; height: 80px; object-fit: cover;"
                       >
                     </div>
                     <div class="flex-grow-1 ms-3">
-                      <h6 class="mb-1">{{ item.product.name }}</h6>
-                      <p class="text-muted small mb-1">{{ item.product.description }}</p>
+                      <h6 class="mb-1">{{ item.title }}</h6>
+                      <p class="text-muted small mb-1">Seller: {{ item.seller }}</p>
                       <div class="d-flex justify-content-between">
-                        <span>Qty: {{ item.quantity }}</span>
-                        <strong>${{ (item.product.price * item.quantity).toFixed(2) }}</strong>
+                        <span>Price: ${{ item.price }}</span>
                       </div>
                     </div>
                   </div>
@@ -69,25 +68,23 @@
                     <div class="card-body">
                       <h6 class="card-title">Order Summary</h6>
                       <div class="d-flex justify-content-between mb-1">
-                        <span>Subtotal</span>
-                        <span>${{ purchase.total_amount.toFixed(2) }}</span>
+                        <span>Amount</span>
+                        <span>${{ purchase.amount.toFixed(2) }}</span>
                       </div>
                       <div class="d-flex justify-content-between mb-1">
-                        <span>Shipping</span>
-                        <span>Free</span>
+                        <span>Seller</span>
+                        <span>{{ purchase.seller }}</span>
+                      </div>
+                      <div class="d-flex justify-content-between mb-1">
+                        <span>Delivery Address</span>
+                        <span class="text-truncate" style="max-width: 100px;">{{ purchase.delivery_address }}</span>
                       </div>
                       <hr>
-                      <div class="d-flex justify-content-between fw-bold">
-                        <span>Total</span>
-                        <span>${{ purchase.total_amount.toFixed(2) }}</span>
-                      </div>
                       
                       <div class="mt-3">
                         <button 
                           class="btn btn-sm btn-outline-primary w-100 mb-2"
-                          @click="viewProduct(item.product.id)"
-                          v-for="item in purchase.items" 
-                          :key="item.id"
+                          @click="viewProduct(purchase.product.id)"
                         >
                           View Product
                         </button>
@@ -130,6 +127,24 @@ export default {
   },
   
   methods: {
+    getPurchaseItems(purchase) {
+      // Return an array with the single product for this purchase
+      return [{
+        id: purchase.product.id,
+        title: purchase.product.title,
+        price: purchase.amount,
+        images: purchase.product.images,
+        seller: purchase.seller
+      }];
+    },
+    
+    getProductImage(item) {
+      if (item.images && item.images.length > 0) {
+        return item.images[0];
+      }
+      return 'https://via.placeholder.com/80';
+    },
+    
     async fetchPurchases() {
       this.loading = true;
       this.error = null;
@@ -186,5 +201,11 @@ export default {
 
 .badge.bg-warning {
   color: #000;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

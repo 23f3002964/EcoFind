@@ -27,25 +27,41 @@
     <!-- Chat Interface -->
     <div v-else class="card">
       <div class="card-body d-flex flex-column" style="height: 70vh;">
+        <!-- Product Info -->
+        <div v-if="product" class="border-bottom pb-3 mb-3">
+          <div class="d-flex align-items-center">
+            <img 
+              :src="getProductImage(product)" 
+              class="img-fluid rounded" 
+              :alt="product.title"
+              style="width: 60px; height: 60px; object-fit: cover;"
+            >
+            <div class="ms-3">
+              <h6 class="mb-0">{{ product.title }}</h6>
+              <p class="text-muted mb-0">${{ product.price }}</p>
+            </div>
+          </div>
+        </div>
+        
         <!-- Messages Area -->
         <div class="flex-grow-1 overflow-auto mb-3" ref="messagesContainer">
           <div 
             v-for="message in messages" 
             :key="message.id"
             class="mb-3"
-            :class="{ 'text-end': message.sender_id === currentUser.id }"
+            :class="{ 'text-end': message.is_from_me }"
           >
             <div 
               class="d-inline-block p-2 rounded"
-              :class="message.sender_id === currentUser.id ? 'bg-primary text-white' : 'bg-light'"
+              :class="message.is_from_me ? 'bg-primary text-white' : 'bg-light'"
               style="max-width: 75%;"
             >
-              <div>{{ message.content }}</div>
+              <div>{{ message.message }}</div>
               <small 
                 class="text-muted" 
-                :class="{ 'text-white-50': message.sender_id === currentUser.id }"
+                :class="{ 'text-white-50': message.is_from_me }"
               >
-                {{ formatTime(message.timestamp) }}
+                {{ formatTime(message.created_at) }}
               </small>
             </div>
           </div>
@@ -85,68 +101,72 @@ import axios from 'axios';
 
 export default {
   name: 'ChatView',
-  props: {
-    chatId: {
-      type: String,
-      required: true
-    }
-  },
   data() {
     return {
-      chat: null,
       messages: [],
       otherUser: null,
+      product: null,
       newMessage: '',
       loading: false,
       sending: false,
       error: null,
-      currentUser: {
-        id: 1 // This would come from auth state
-      }
+      pollingInterval: null
     };
   },
   
   computed: {
     chatPartnerName() {
-      return this.otherUser ? `${this.otherUser.first_name} ${this.otherUser.last_name}` : 'Chat';
+      return this.otherUser ? `${this.otherUser.username}` : 'Chat';
     }
   },
   
-  mounted() {
-    this.fetchChat();
-    this.setupWebSocket(); // In a real app, we'd use WebSocket for real-time messaging
+  async mounted() {
+    await this.fetchChatData();
+    this.setupPolling();
   },
   
   beforeUnmount() {
-    if (this.websocket) {
-      this.websocket.close();
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
     }
   },
   
   methods: {
-    async fetchChat() {
+    getProductImage(product) {
+      if (product.images && product.images.length > 0) {
+        return product.images[0];
+      }
+      return 'https://via.placeholder.com/80';
+    },
+    
+    async fetchChatData() {
       this.loading = true;
       this.error = null;
       
       try {
-        // Fetch chat details
-        const chatResponse = await axios.get(`/api/chats/${this.chatId}`);
-        this.chat = chatResponse.data;
+        // Get route parameters
+        const otherUserId = this.$route.params.other_user_id || this.$route.params.chatId;
+        const productId = this.$route.query.product_id;
         
         // Fetch messages
-        const messagesResponse = await axios.get(`/api/chats/${this.chatId}/messages`);
+        const messagesResponse = await axios.get(`/api/chats/${otherUserId}?product_id=${productId}`);
         this.messages = messagesResponse.data.messages || [];
         
-        // Get other user info
-        const otherUserId = this.chat.participants.find(id => id !== this.currentUser.id);
+        // Fetch other user info
         const userResponse = await axios.get(`/api/users/${otherUserId}`);
         this.otherUser = userResponse.data;
+        
+        // Fetch product info if productId is provided
+        if (productId) {
+          const productResponse = await axios.get(`/api/products/${productId}`);
+          this.product = productResponse.data;
+        }
         
         this.$nextTick(() => {
           this.scrollToBottom();
         });
       } catch (err) {
-        console.error('Error fetching chat:', err);
+        console.error('Error fetching chat data:', err);
         this.error = 'Failed to load chat. Please try again.';
       } finally {
         this.loading = false;
@@ -159,11 +179,23 @@ export default {
       this.sending = true;
       
       try {
-        const response = await axios.post(`/api/chats/${this.chatId}/messages`, {
-          content: this.newMessage.trim()
+        const otherUserId = this.$route.params.other_user_id || this.$route.params.chatId;
+        const productId = this.$route.query.product_id;
+        
+        const response = await axios.post('/api/chats', {
+          receiver_id: otherUserId,
+          product_id: productId,
+          message: this.newMessage.trim()
         });
         
-        this.messages.push(response.data);
+        // Add message to local list
+        this.messages.push({
+          id: response.data.message_id || Date.now(),
+          message: this.newMessage.trim(),
+          is_from_me: true,
+          created_at: new Date().toISOString()
+        });
+        
         this.newMessage = '';
         
         this.$nextTick(() => {
@@ -188,18 +220,22 @@ export default {
       return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     },
     
-    setupWebSocket() {
-      // In a real implementation, we would connect to a WebSocket server
-      // For now, we'll simulate real-time updates with periodic polling
-      this.messagePolling = setInterval(this.fetchNewMessages, 5000);
+    setupPolling() {
+      // Poll for new messages every 5 seconds
+      this.pollingInterval = setInterval(this.fetchNewMessages, 5000);
     },
     
     async fetchNewMessages() {
       try {
-        const response = await axios.get(`/api/chats/${this.chatId}/messages?since=${this.getLastMessageTimestamp()}`);
-        if (response.data.messages && response.data.messages.length > 0) {
-          this.messages = [...this.messages, ...response.data.messages];
-          
+        const otherUserId = this.$route.params.other_user_id || this.$route.params.chatId;
+        const productId = this.$route.query.product_id;
+        
+        const response = await axios.get(`/api/chats/${otherUserId}?product_id=${productId}`);
+        const newMessages = response.data.messages || [];
+        
+        // Check if there are new messages
+        if (newMessages.length > this.messages.length) {
+          this.messages = newMessages;
           this.$nextTick(() => {
             this.scrollToBottom();
           });
@@ -207,11 +243,6 @@ export default {
       } catch (err) {
         console.error('Error fetching new messages:', err);
       }
-    },
-    
-    getLastMessageTimestamp() {
-      if (this.messages.length === 0) return null;
-      return this.messages[this.messages.length - 1].timestamp;
     }
   }
 };

@@ -25,6 +25,7 @@ import AuctionDetailView from '@/views/AuctionDetailView.vue'
 
 // Chat
 import ChatView from '@/views/ChatView.vue'
+import ChatsView from '@/views/ChatsView.vue'
 
 // User
 import UserDashboardView from '@/views/User/DashboardView.vue'
@@ -153,7 +154,13 @@ const routes = [
   { path: '/forgot-password', component: ForgotPassword },
   { path: '/reset-password/:token', component: ResetPassword },
   {
-    path: '/chat/:chatId',
+    path: '/chats',
+    name: 'chats',
+    component: ChatsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/chat/:other_user_id',
     name: 'chat',
     component: ChatView,
     meta: { requiresAuth: true }

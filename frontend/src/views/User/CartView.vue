@@ -47,15 +47,15 @@
               <div class="d-flex">
                 <div class="flex-shrink-0">
                   <img 
-                    :src="item.product.image_url || 'https://via.placeholder.com/100'" 
+                    :src="getProductImage(item.product)" 
                     class="img-fluid rounded" 
-                    alt="Product image"
+                    :alt="item.product.title"
                     style="width: 100px; height: 100px; object-fit: cover;"
                   >
                 </div>
                 <div class="flex-grow-1 ms-3">
-                  <h5 class="card-title">{{ item.product.name }}</h5>
-                  <p class="card-text text-muted">{{ item.product.description }}</p>
+                  <h5 class="card-title">{{ item.product.title }}</h5>
+                  <p class="card-text text-muted">{{ item.product.seller }}</p>
                   
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -160,6 +160,14 @@ export default {
   },
   
   methods: {
+    getProductImage(product) {
+      if (product.images && product.images.length > 0) {
+        // Assuming the first image is the main image
+        return product.images[0];
+      }
+      return 'https://via.placeholder.com/100';
+    },
+    
     async fetchCart() {
       this.loading = true;
       this.error = null;
@@ -204,10 +212,23 @@ export default {
       this.processing = true;
       this.error = null;
       
+      // Prompt for delivery address
+      const deliveryAddress = prompt('Please enter your delivery address:');
+      if (!deliveryAddress) {
+        this.processing = false;
+        return;
+      }
+      
       try {
-        const response = await axios.post('/api/cart/checkout');
-        // Redirect to success page or order confirmation
-        this.$router.push(`/order-confirmation/${response.data.orderId}`);
+        const response = await axios.post('/api/checkout', {
+          delivery_address: deliveryAddress
+        });
+        
+        // Show success message
+        alert(`Order placed successfully! Total amount: $${response.data.total_amount.toFixed(2)}`);
+        
+        // Refresh cart
+        this.fetchCart();
       } catch (err) {
         console.error('Error during checkout:', err);
         this.error = 'Checkout failed. Please try again.';

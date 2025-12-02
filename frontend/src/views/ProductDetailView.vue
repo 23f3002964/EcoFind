@@ -189,49 +189,51 @@
             </div>
 
             <!-- Action Buttons Section -->
-            <div class="d-grid gap-2">
-              <!-- Add to Cart Button - For fixed-price items (not sold, not owned) -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-4">
+              <!-- Contact Seller Button (visible to all except seller) -->
               <button 
-                v-if="!product.is_auction && !product.is_sold && product.seller.id !== currentUser?.id"
-                class="btn btn-success btn-lg" 
+                v-if="product.seller.id !== currentUser?.id" 
+                class="btn btn-primary btn-lg me-md-2"
+                @click="contactSeller"
+              >
+                <i class="bi bi-chat-dots"></i> Chat with Seller
+              </button>
+              
+              <!-- Add to Cart Button (for non-auction items) -->
+              <button 
+                v-if="!product.is_auction && product.seller.id !== currentUser?.id && !product.is_sold" 
+                class="btn btn-success btn-lg me-md-2" 
                 @click="addToCart"
                 :disabled="addingToCart"
               >
-                <span v-if="addingToCart" class="spinner-border spinner-border-sm me-2"></span>
-                <i class="bi bi-cart me-2"></i>
-                {{ addingToCart ? 'Adding...' : 'Add to Cart' }}
+                <span v-if="!addingToCart">
+                  <i class="bi bi-cart-plus"></i> Add to Cart
+                </span>
+                <span v-else>
+                  <span class="spinner-border spinner-border-sm" role="status"></span>
+                  Adding...
+                </span>
               </button>
-
-              <!-- Chat with Seller Button - Prominently displayed for all non-owned products -->
+              
+              <!-- Create Price Alert Button (for non-auction items) -->
               <button 
-                v-if="product.seller.id !== currentUser?.id"
-                class="btn btn-primary btn-lg" 
-                @click="contactSeller"
-              >
-                <i class="bi bi-chat-dots me-2"></i>
-                Chat with Seller
-              </button>
-
-              <!-- Create Price Alert Button - For all non-owned products -->
-              <button 
-                v-if="!product.is_auction && product.seller.id !== currentUser?.id && $store.state.isAuthenticated"
-                class="btn btn-outline-warning btn-lg" 
+                v-if="!product.is_auction && product.seller.id !== currentUser?.id && $store.state.isAuthenticated" 
+                class="btn btn-warning btn-lg"
                 @click="createPriceAlert"
               >
-                <i class="bi bi-bell me-2"></i>
-                Create Price Alert
+                <i class="bi bi-bell"></i> Create Price Alert
               </button>
-
-              <!-- Edit Product Button - Only for product owners -->
+              
+              <!-- Edit Product Button (visible only to seller) -->
               <button 
-                v-if="product.seller.id === currentUser?.id"
-                class="btn btn-outline-secondary btn-lg" 
+                v-if="product.seller.id === currentUser?.id" 
+                class="btn btn-outline-primary btn-lg me-md-2"
                 @click="editProduct"
               >
-                <i class="bi bi-pencil me-2"></i>
-                Edit Product
+                <i class="bi bi-pencil-square"></i> Edit Product
               </button>
             </div>
+
           </div>
         </div>
       </div>
@@ -433,17 +435,40 @@ export default {
       }
     },
     
-    // Initiate chat with seller (placeholder implementation)
-    contactSeller() {
+    // Initiate chat with seller
+    async contactSeller() {
       // Require authentication to contact seller
       if (!this.isAuthenticated) {
         this.$router.push('/login');
         return;
       }
       
-      // In a full implementation, this would open a chat with the seller
-      // For now, we'll show an alert with instructions
-      alert(`This would open a chat with ${this.product.seller.first_name} ${this.product.seller.last_name}. In a full implementation, you would be able to send messages directly to the seller.`);
+      try {
+        // Create or get existing chat with seller
+        const response = await fetch(`${this.$store.state.backendUrl}/api/chats`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': this.authData?.token
+          },
+          body: JSON.stringify({
+            receiver_id: this.product.seller.id,
+            product_id: this.product.id,
+            message: `Hi, I'm interested in your product "${this.product.title}".`
+          })
+        });
+        
+        if (response.ok) {
+          // Open chat view
+          this.$router.push(`/chat/${this.product.seller.id}?product_id=${this.product.id}`);
+        } else {
+          const error = await response.json();
+          alert(error.error || 'Failed to initiate chat');
+        }
+      } catch (error) {
+        console.error('Error initiating chat:', error);
+        alert('Network error. Please try again.');
+      }
     },
     
     // Create a price alert for this product

@@ -51,6 +51,10 @@
           <i class="bi bi-search me-2"></i>
           <span v-if="!isCollapsed">Browse</span>
         </router-link>
+        <router-link to="/chats" class="nav-link d-flex align-items-center">
+          <i class="bi bi-chat-dots me-2"></i>
+          <span v-if="!isCollapsed">Messages</span>
+        </router-link>
         <router-link to="/saved-searches" class="nav-link d-flex align-items-center">
           <i class="bi bi-bookmark me-2"></i>
           <span v-if="!isCollapsed">Saved Searches</span>

@@ -1,6 +1,9 @@
 <template>
   <div class="top-header d-flex justify-content-between align-items-center px-4 py-2 border-bottom bg-white">
     <div class="d-flex align-items-center gap-3">
+      <router-link to="/chats" class="btn btn-outline-info btn-sm" v-if="$store.state.isAuthenticated">
+        <i class="bi bi-chat-dots"></i> Messages
+      </router-link>
       <router-link to="/saved-searches" class="btn btn-outline-primary btn-sm" v-if="$store.state.isAuthenticated">
         <i class="bi bi-bookmark"></i> Saved Searches
       </router-link>
