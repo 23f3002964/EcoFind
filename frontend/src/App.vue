@@ -1,5 +1,10 @@
 <template>
   <div id="app" class="d-flex">
+    <!-- Debug info -->
+    <div v-if="false" style="position: fixed; top: 0; left: 0; background: red; color: white; z-index: 9999; padding: 10px;">
+      Debug: Store Loaded - {{ $store ? 'Yes' : 'No' }}
+    </div>
+    
     <!-- Sidebar -->
     <NavBar />
 
@@ -24,6 +29,11 @@ export default {
     components:{
       NavBar,
       HeaderBar,
+  },
+  mounted() {
+    console.log('App mounted');
+    console.log('Store:', this.$store);
+    console.log('Router:', this.$router);
   }
 }
 </script>
