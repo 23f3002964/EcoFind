@@ -31,7 +31,6 @@
 </template>
 
 
-
 <script>
 import { mapState } from 'vuex';
 import AuthForm from '@/components/AuthForm.vue';
@@ -54,6 +53,9 @@ export default {
   // Methods (event handlers, helpers, etc.)
   methods: {
     async handleLogin() {
+      // TODO: Add client-side validation for email format
+      // TODO: Add rate limiting for login attempts
+      
       const url = `${this.$store.state.backendUrl}/login`;
       const userData = { 'email': this.email, 'password': this.password };
 
@@ -92,6 +94,7 @@ export default {
         
       } catch (error) {
         console.error('An error occurred:', error);
+        // TODO: Add more specific error handling for network issues
         alert(error);
       }
     }

@@ -15,6 +15,7 @@ mail = Mail()
 
 # In-memory storage for OTPs (in production, use Redis or database)
 # TODO: Replace with Redis or database storage for production
+# TODO: Add expiration for OTPs (e.g., 10 minutes)
 otp_storage = {}
 
 def init_auth_blueprint(app_instance, datastore_instance):
@@ -303,6 +304,7 @@ def resend_otp():
     # Generate and send new OTP
     otp = ''.join(random.choices(string.digits, k=6))
     # TODO: Add rate limiting to prevent abuse
+    # TODO: Add cooldown period (e.g., 1 minute between requests)
     if send_otp_sms(phone_number, otp):
         return jsonify({"msg": "OTP resent successfully"}), 200
     else:

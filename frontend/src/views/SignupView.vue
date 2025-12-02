@@ -32,6 +32,7 @@
       <div class="mb-3">
         <label for="phoneNumber" class="form-label">Phone Number</label>
         <input v-model="phoneNumber" type="tel" class="form-control" id="phoneNumber" placeholder="+1 (555) 123-4567" required>
+        <!-- TODO: Add phone number format validation and formatting -->
       </div>
 
       <!-- Password and Confirm Password -->
@@ -116,6 +117,9 @@ export default {
         return;
       }
 
+      // TODO: Add client-side validation for phone number format
+      // TODO: Add password strength validation
+      
       const userData = {
         email: this.email,
         first_name: this.firstName,

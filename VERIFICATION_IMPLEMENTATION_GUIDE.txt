@@ -1,0 +1,106 @@
+# Verification Implementation Guide
+
+This document outlines where you need to add actual code for verification features in the EcoFinds application.
+
+## Backend (Python/Flask)
+
+### 1. SMS Service Integration
+**File:** `backend/blueprints/auth.py`
+**Function:** `send_otp_sms()`
+**TODO Comments:**
+- Replace in-memory OTP storage with Redis or database
+- Integrate with actual SMS service (Twilio, AWS SNS, etc.)
+- Add OTP expiration (e.g., 10 minutes)
+
+### 2. OTP Security Features
+**File:** `backend/blueprints/auth.py`
+**Function:** `resend_otp()`
+**TODO Comments:**
+- Add rate limiting to prevent abuse
+- Add cooldown period (e.g., 1 minute between requests)
+
+### 3. OTP Storage
+**File:** `backend/blueprints/auth.py`
+**Variable:** `otp_storage`
+**TODO Comments:**
+- Replace with Redis or database storage for production
+- Add expiration for OTPs (e.g., 10 minutes)
+
+## Frontend (Vue.js)
+
+### 1. Phone Number Validation
+**File:** `frontend/src/views/SignupView.vue`
+**TODO Comments:**
+- Add phone number format validation and formatting
+- Add client-side validation for phone number format
+
+### 2. Password Strength Validation
+**File:** `frontend/src/views/SignupView.vue`
+**TODO Comments:**
+- Add password strength validation
+
+### 3. Email Format Validation
+**File:** `frontend/src/views/LoginView.vue`
+**TODO Comments:**
+- Add client-side validation for email format
+- Add rate limiting for login attempts
+- Add more specific error handling for network issues
+
+## Implementation Examples
+
+### SMS Service Integration (Twilio)
+```python
+# In send_otp_sms function:
+from twilio.rest import Client
+
+# Your Twilio credentials (use environment variables)
+account_sid = os.environ['TWILIO_ACCOUNT_SID']
+auth_token = os.environ['TWILIO_AUTH_TOKEN']
+client = Client(account_sid, auth_token)
+
+message = client.messages.create(
+    body=f"Your EcoFinds verification code is: {otp}",
+    from_='+1234567890',  # Your Twilio number
+    to=phone_number
+)
+```
+
+### Redis OTP Storage
+```python
+# Replace otp_storage with Redis
+import redis
+
+# Initialize Redis connection
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
+# Store OTP with expiration
+redis_client.setex(f"otp:{phone_number}", 600, otp)  # 10 minutes expiration
+
+# Retrieve OTP
+stored_otp = redis_client.get(f"otp:{phone_number}")
+
+# Delete OTP after use
+redis_client.delete(f"otp:{phone_number}")
+```
+
+### Rate Limiting
+```python
+# In resend_otp function:
+import time
+
+# Check last request time
+last_request = redis_client.get(f"last_otp_request:{phone_number}")
+if last_request and (time.time() - float(last_request)) < 60:
+    return jsonify({"msg": "Please wait before requesting another OTP"}), 429
+
+# Store current request time
+redis_client.setex(f"last_otp_request:{phone_number}", 60, time.time())
+```
+
+## Additional Security Considerations
+
+1. **Environment Variables**: Store API keys and secrets in environment variables
+2. **Logging**: Add logging for security events
+3. **Monitoring**: Implement monitoring for suspicious activities
+4. **Encryption**: Ensure all communications are encrypted (HTTPS)
+5. **Input Sanitization**: Validate and sanitize all user inputs
