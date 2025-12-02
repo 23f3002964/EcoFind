@@ -33,6 +33,8 @@ import UserProfileView from '@/views/User/ProfileView.vue'
 import MyListingsView from '@/views/User/MyListingsView.vue'
 import CartView from '@/views/User/CartView.vue'
 import PurchasesView from '@/views/User/PurchasesView.vue'
+import ReviewsView from '@/views/User/ReviewsView.vue'
+import DisputesView from '@/views/User/DisputesView.vue'
 import Unauthorized from '@/components/Unauthorized.vue'
 
 // Admin 
@@ -193,7 +195,16 @@ const routes = [
     name: 'purchases',
     component: PurchasesView
   },
-
+  {
+    path: '/user/:userId/reviews',
+    name: 'userReviews',
+    component: ReviewsView
+  },
+  {
+    path: '/user/:userId/disputes',
+    name: 'userDisputes',
+    component: DisputesView
+  },
 
   // Role: Admin's Routes
   {

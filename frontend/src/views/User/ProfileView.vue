@@ -20,6 +20,18 @@
           <template #actions>
             <button class="btn btn-outline-primary">Edit Profile</button>
             <button class="btn btn-outline-secondary">Change Password</button>
+            <router-link 
+              :to="`/user/${user.id}/reviews`" 
+              class="btn btn-outline-info"
+            >
+              <i class="bi bi-star"></i> Reviews ({{ user.total_reviews }})
+            </router-link>
+            <router-link 
+              :to="`/user/${user.id}/disputes`" 
+              class="btn btn-outline-warning"
+            >
+              <i class="bi bi-exclamation-circle"></i> Disputes
+            </router-link>
             <hr />
             <button class="btn custom-danger" @click="handleLogout">Logout</button>
           </template>
@@ -43,6 +55,17 @@
             <div class="col-sm-4 text-muted">Status</div>
             <div class="col-sm-8">
               <span class="badge bg-success">Active</span>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-sm-4 text-muted">Rating</div>
+            <div class="col-sm-8">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-star-fill text-warning me-1"></i>
+                <span>{{ user.rating ? user.rating.toFixed(1) : 'N/A' }}</span>
+                <span class="text-muted ms-1">({{ user.total_reviews }} reviews)</span>
+              </div>
             </div>
           </div>
 

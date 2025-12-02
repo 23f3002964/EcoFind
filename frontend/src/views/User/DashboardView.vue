@@ -1,134 +1,219 @@
 <template>
-  <!-- Loader -->
-  <div v-if="loading" class="container my-4">
-    <Loader1 />
-  </div>
-
-  <div v-else class="container my-4">
+  <div class="container my-4">
     <h4>User Dashboard</h4>
-
-    <!-- Quick Links Section -->
+    
+    <!-- Quick Actions -->
     <div class="row mb-4">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="mb-0">Quick Actions</h5>
+      <div class="col-md-3 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-box fs-1 text-primary"></i>
+            <h5 class="card-title mt-2">My Listings</h5>
+            <p class="card-text">Manage your product listings</p>
+            <router-link :to="`/user/${userId}/listings`" class="btn btn-primary">View</router-link>
           </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-2 col-sm-6 mb-3">
-                <router-link to="/products" class="btn btn-primary w-100">
-                  <i class="bi bi-search me-1"></i> Browse Products
-                </router-link>
-              </div>
-              <div class="col-md-2 col-sm-6 mb-3">
-                <router-link to="/add-product" class="btn btn-success w-100">
-                  <i class="bi bi-plus-lg me-1"></i> Add Product
-                </router-link>
-              </div>
-              <div class="col-md-2 col-sm-6 mb-3">
-                <router-link :to="`/user/${userId}/listings`" class="btn btn-info w-100">
-                  <i class="bi bi-list-ul me-1"></i> My Listings
-                </router-link>
-              </div>
-              <div class="col-md-2 col-sm-6 mb-3">
-                <router-link :to="`/user/${userId}/cart`" class="btn btn-warning w-100">
-                  <i class="bi bi-cart me-1"></i> My Cart
-                </router-link>
-              </div>
-              <div class="col-md-2 col-sm-6 mb-3">
-                <router-link to="/my-bids" class="btn btn-secondary w-100">
-                  <i class="bi bi-gavel me-1"></i> My Bids
-                </router-link>
-              </div>
-              <div class="col-md-2 col-sm-6 mb-3">
-                <router-link :to="`/user/${userId}/purchases`" class="btn btn-dark w-100">
-                  <i class="bi bi-box-seam me-1"></i> Purchases
-                </router-link>
-              </div>
-            </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-cart fs-1 text-success"></i>
+            <h5 class="card-title mt-2">My Cart</h5>
+            <p class="card-text">View and manage your shopping cart</p>
+            <router-link :to="`/user/${userId}/cart`" class="btn btn-success">View</router-link>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-currency-dollar fs-1 text-warning"></i>
+            <h5 class="card-title mt-2">My Purchases</h5>
+            <p class="card-text">View your purchase history</p>
+            <router-link :to="`/user/${userId}/purchases`" class="btn btn-warning">View</router-link>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-chat-dots fs-1 text-info"></i>
+            <h5 class="card-title mt-2">My Messages</h5>
+            <p class="card-text">Check your messages</p>
+            <router-link :to="`/chats`" class="btn btn-info">View</router-link>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Summary Cards -->
+    
+    <!-- Additional Features -->
     <div class="row mb-4">
-      <div class="col-md-3 col-sm-6 mb-3" v-for="(card, index) in cards" :key="index">
-        <div class="card text-white bg-primary h-100">
-          <div class="card-body d-flex flex-column justify-content-between">
-            <h5 class="card-title">{{ card.title }}</h5>
-            <h3>{{ card.value }}</h3>
+      <div class="col-md-3 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-star fs-1 text-purple"></i>
+            <h5 class="card-title mt-2">My Reviews</h5>
+            <p class="card-text">View and manage your reviews</p>
+            <router-link :to="`/user/${userId}/reviews`" class="btn btn-outline-purple">View</router-link>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-exclamation-circle fs-1 text-orange"></i>
+            <h5 class="card-title mt-2">My Disputes</h5>
+            <p class="card-text">Manage your disputes</p>
+            <router-link :to="`/user/${userId}/disputes`" class="btn btn-outline-orange">View</router-link>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-search fs-1 text-teal"></i>
+            <h5 class="card-title mt-2">Saved Searches</h5>
+            <p class="card-text">Manage your saved searches</p>
+            <router-link :to="`/saved-searches`" class="btn btn-outline-teal">View</router-link>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-bell fs-1 text-pink"></i>
+            <h5 class="card-title mt-2">Price Alerts</h5>
+            <p class="card-text">Manage your price alerts</p>
+            <router-link :to="`/price-alerts`" class="btn btn-outline-pink">View</router-link>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Recent Activity Table -->
+    
+    <!-- Stats Overview -->
     <div class="card">
-      <div class="card-header">Recent Activity</div>
-      <div class="card-body p-0">
-        <table class="table mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Date</th>
-              <th>Activity</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, index) in tableData" :key="index">
-              <td>{{ row.date }}</td>
-              <td>{{ row.activity }}</td>
-              <td><span class="badge bg-success">{{ row.status }}</span></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="card-header">
+        <h5>Overview</h5>
+      </div>
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-3 mb-3">
+            <h3>{{ stats.total_listings }}</h3>
+            <p class="text-muted">Total Listings</p>
+          </div>
+          <div class="col-md-3 mb-3">
+            <h3>{{ stats.active_listings }}</h3>
+            <p class="text-muted">Active Listings</p>
+          </div>
+          <div class="col-md-3 mb-3">
+            <h3>{{ stats.total_purchases }}</h3>
+            <p class="text-muted">Total Purchases</p>
+          </div>
+          <div class="col-md-3 mb-3">
+            <h3>{{ stats.unread_messages }}</h3>
+            <p class="text-muted">Unread Messages</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import Loader1 from '@/components/Loader1.vue';
+import axios from 'axios';
+
 export default {
-  name: 'Dashboard',
+  name: 'UserDashboard',
   data() {
     return {
-      userId: this.$route.params.userId || this.$store.state.userId || 1,
-      loading: false,
-      cards: [
-        { title: 'My Listings', value: 5 },
-        { title: 'Purchases', value: 12 },
-        { title: 'Messages', value: 3 },
-        { title: 'Saved Items', value: 8 },
-      ],
-      tableData: [
-        { date: '2025-05-18', activity: 'Added new product', status: 'Success' },
-        { date: '2025-05-17', activity: 'Placed bid on auction', status: 'Success' },
-        { date: '2025-05-16', activity: 'Updated profile', status: 'Success' },
-      ],
+      userId: null,
+      stats: {
+        total_listings: 0,
+        active_listings: 0,
+        total_purchases: 0,
+        unread_messages: 0
+      }
+    };
+  },
+  
+  mounted() {
+    this.userId = this.$route.params.userId;
+    this.fetchDashboardData();
+  },
+  
+  methods: {
+    async fetchDashboardData() {
+      try {
+        const response = await axios.get('/api/dashboard');
+        this.stats = response.data.stats;
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
     }
-  },
-
-  components: {
-    Loader1
-  },
-
-  computed: {
-
   }
-}
+};
 </script>
 
 <style scoped>
-.btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.text-purple {
+  color: #6f42c1;
 }
 
-.card {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+.text-orange {
+  color: #fd7e14;
+}
+
+.text-teal {
+  color: #20c997;
+}
+
+.text-pink {
+  color: #d63384;
+}
+
+.btn-outline-purple {
+  color: #6f42c1;
+  border-color: #6f42c1;
+}
+
+.btn-outline-purple:hover {
+  background-color: #6f42c1;
+  border-color: #6f42c1;
+}
+
+.btn-outline-orange {
+  color: #fd7e14;
+  border-color: #fd7e14;
+}
+
+.btn-outline-orange:hover {
+  background-color: #fd7e14;
+  border-color: #fd7e14;
+}
+
+.btn-outline-teal {
+  color: #20c997;
+  border-color: #20c997;
+}
+
+.btn-outline-teal:hover {
+  background-color: #20c997;
+  border-color: #20c997;
+}
+
+.btn-outline-pink {
+  color: #d63384;
+  border-color: #d63384;
+}
+
+.btn-outline-pink:hover {
+  background-color: #d63384;
+  border-color: #d63384;
 }
 </style>

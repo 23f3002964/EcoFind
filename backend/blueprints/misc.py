@@ -143,6 +143,17 @@ def create_dispute():
         if field not in data:
             return jsonify({'error': f'{field} is required'}), 400
     
+    # Validate that complainant and respondent are different
+    if current_user.id == data['respondent_id']:
+        return jsonify({'error': 'Cannot file dispute against yourself'}), 400
+    
+    # Check if product exists (if provided)
+    product = None
+    if data.get('product_id'):
+        product = Product.query.get(data['product_id'])
+        if not product:
+            return jsonify({'error': 'Product not found'}), 404
+    
     dispute = Dispute(
         complainant_id=current_user.id,
         respondent_id=data['respondent_id'],
@@ -154,6 +165,16 @@ def create_dispute():
     db.session.add(dispute)
     db.session.commit()
     
+    # Send notification to respondent
+    notification = Notification(
+        user_id=data['respondent_id'],
+        title="New Dispute Filed Against You",
+        message=f"A dispute titled '{data['title']}' has been filed against you. Please check the disputes section for details.",
+        related_product_id=data.get('product_id')
+    )
+    db.session.add(notification)
+    db.session.commit()
+    
     return jsonify({'message': 'Dispute created successfully', 'dispute_id': dispute.id}), 201
 
 @misc_bp.route('/api/disputes', methods=['GET'])
@@ -161,10 +182,16 @@ def create_dispute():
 def get_user_disputes():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
+    status = request.args.get('status')
     
-    disputes = Dispute.query.filter(
+    query = Dispute.query.filter(
         or_(Dispute.complainant_id == current_user.id, Dispute.respondent_id == current_user.id)
-    ).order_by(Dispute.created_at.desc()).paginate(
+    )
+    
+    if status:
+        query = query.filter_by(status=status)
+    
+    disputes = query.order_by(Dispute.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
     
@@ -175,15 +202,47 @@ def get_user_disputes():
             'description': dispute.description,
             'status': dispute.status,
             'is_complainant': dispute.complainant_id == current_user.id,
-            'other_party': dispute.respondent.username if dispute.complainant_id == current_user.id else dispute.complainant.username,
-            'product_title': Product.query.get(dispute.product_id).title if dispute.product_id else None,
+            'other_party': {
+                'id': dispute.respondent.id if dispute.complainant_id == current_user.id else dispute.complainant.id,
+                'username': dispute.respondent.username if dispute.complainant_id == current_user.id else dispute.complainant.username
+            },
+            'product': {
+                'id': dispute.product.id,
+                'title': dispute.product.title
+            } if dispute.product else None,
             'admin_notes': dispute.admin_notes,
-            'created_at': dispute.created_at.isoformat()
+            'created_at': dispute.created_at.isoformat(),
+            'updated_at': dispute.updated_at.isoformat()
         } for dispute in disputes.items],
         'total': disputes.total,
         'pages': disputes.pages,
         'current_page': page
     }), 200
+
+@misc_bp.route('/api/disputes/<int:dispute_id>', methods=['PUT'])
+@auth_required()
+def update_dispute(dispute_id):
+    dispute = Dispute.query.get_or_404(dispute_id)
+    
+    # Only complainant or respondent can update their own dispute
+    if current_user.id not in [dispute.complainant_id, dispute.respondent_id]:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    
+    # Users can only add evidence or update description
+    if 'description' in data and current_user.id == dispute.complainant_id:
+        dispute.description = data['description']
+    
+    if 'evidence' in data:
+        # In a full implementation, this would handle file uploads
+        # For now, we'll just append to the description
+        dispute.description += f"\n\nEvidence: {data['evidence']}"
+    
+    dispute.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'message': 'Dispute updated successfully'}), 200
 
 # ============= SEARCH AND RECOMMENDATIONS =============
 
