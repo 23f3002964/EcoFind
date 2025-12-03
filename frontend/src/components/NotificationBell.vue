@@ -89,8 +89,6 @@
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
   name: 'NotificationBell',
   data() {
@@ -124,14 +122,20 @@ export default {
       
       try {
         this.loading = true;
-        const response = await axios.get('/api/notifications?per_page=5', {
+        const response = await fetch(`${this.$store.state.backendUrl}/api/notifications?per_page=5`, {
           headers: {
-            'Authorization': this.$store.state.authData?.token
+            'Authorization': this.$store.state.authData?.token,
+            'Content-Type': 'application/json'
           }
         });
         
-        this.notifications = response.data.notifications;
-        this.unreadCount = response.data.notifications.filter(n => !n.is_read).length;
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        this.notifications = data.notifications;
+        this.unreadCount = data.notifications.filter(n => !n.is_read).length;
       } catch (error) {
         console.error('Error fetching notifications:', error);
       } finally {
@@ -146,11 +150,18 @@ export default {
       
       try {
         this.markingAllRead = true;
-        await axios.put('/api/notifications/read-all', {}, {
+        const response = await fetch(`${this.$store.state.backendUrl}/api/notifications/read-all`, {
+          method: 'PUT',
           headers: {
-            'Authorization': this.$store.state.authData?.token
-          }
+            'Authorization': this.$store.state.authData?.token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
         });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         // Update local state to reflect all notifications as read
         this.notifications.forEach(n => n.is_read = true);
@@ -168,11 +179,18 @@ export default {
       // Mark as read if it's currently unread
       if (!notification.is_read) {
         try {
-          await axios.put(`/api/notifications/${notification.id}/read`, {}, {
+          const response = await fetch(`${this.$store.state.backendUrl}/api/notifications/${notification.id}/read`, {
+            method: 'PUT',
             headers: {
-              'Authorization': this.$store.state.authData?.token
-            }
+              'Authorization': this.$store.state.authData?.token,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
           });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
           
           // Update local state
           notification.is_read = true;

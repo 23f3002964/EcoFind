@@ -5,9 +5,6 @@ import store from './store'
 import translationService from './services/translationService'
 import i18n from './plugins/i18n'
 
-// Simplified initialization for debugging
-createApp(App).use(store).use(router).use(i18n).mount('#app')
-
 // Load translations based on user's preferred language
 async function initApp() {
   // Try to get user's preferred language from store
