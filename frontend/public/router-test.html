@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vue Router Test</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>Vue Router Test</h1>
+        <p><router-link to="/">Home</router-link> | <router-link to="/about">About</router-link></p>
+        <router-view></router-view>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { createRouter, createWebHashHistory } = VueRouter;
+        
+        console.log('Creating Vue app with router');
+        
+        // Define some components
+        const Home = { template: '<div><h2>Home Page</h2><p>Welcome to the home page!</p></div>' }
+        const About = { template: '<div><h2>About Page</h2><p>This is the about page.</p></div>' }
+        
+        // Define routes
+        const routes = [
+            { path: '/', component: Home },
+            { path: '/about', component: About }
+        ]
+        
+        // Create router instance
+        const router = createRouter({
+            history: createWebHashHistory(),
+            routes
+        })
+        
+        // Create app instance
+        const app = createApp({
+            template: `
+                <div>
+                    <h1>Vue Router Test</h1>
+                    <p>
+                        <router-link to="/">Home</router-link> | 
+                        <router-link to="/about">About</router-link>
+                    </p>
+                    <router-view></router-view>
+                </div>
+            `
+        })
+        
+        // Install router
+        app.use(router)
+        
+        console.log('Mounting Vue app');
+        app.mount('#app')
+        console.log('Vue app mounted to #app');
+    </script>
+</body>
+</html>

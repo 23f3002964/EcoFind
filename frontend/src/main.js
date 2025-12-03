@@ -5,22 +5,55 @@ import store from './store'
 import translationService from './services/translationService'
 import i18n from './plugins/i18n'
 
-// Load translations based on user's preferred language
-async function initApp() {
-  // Try to get user's preferred language from store
-  const userPreferredLanguage = store.state.userData?.preferred_language || 'en';
-  
-  // Load translations
-  await translationService.loadTranslations(userPreferredLanguage);
-  
-  // Create and mount the app
-  createApp(App).use(store).use(router).use(i18n).mount('#app')
-}
+console.log('Main.js loaded');
 
-initApp().catch(error => {
-  console.error('Error initializing app:', error);
-  // Fallback to English if there's an error
-  translationService.loadTranslations('en').then(() => {
-    createApp(App).use(store).use(router).use(i18n).mount('#app')
+// Add global error handling
+window.addEventListener('error', (e) => {
+  console.error('Global error caught:', e.error);
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Unhandled promise rejection:', e.reason);
+});
+
+try {
+  // Create the app instance
+  const app = createApp(App)
+
+  console.log('App instance created');
+
+  // Use plugins
+  app.use(store)
+  app.use(router)
+  app.use(i18n)
+
+  console.log('Plugins registered');
+
+  // Mount the app immediately
+  app.mount('#app')
+
+  console.log('App mounted to #app');
+
+  // Load translations after mounting
+  async function loadTranslations() {
+    try {
+      console.log('Attempting to load translations');
+      // Try to get user's preferred language from store
+      const userPreferredLanguage = store.state.userData?.preferred_language || 'en';
+      console.log('User preferred language:', userPreferredLanguage);
+      
+      // Load translations
+      await translationService.loadTranslations(userPreferredLanguage);
+      console.log('Translations loaded successfully');
+    } catch (error) {
+      console.error('Error loading translations:', error);
+    }
+  }
+
+  // Load translations after mounting
+  loadTranslations().catch(error => {
+    console.error('Error loading translations after mount:', error);
   });
-})
+} catch (error) {
+  console.error('Error during app initialization:', error);
+}

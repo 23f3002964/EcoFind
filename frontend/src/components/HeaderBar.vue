@@ -27,7 +27,7 @@
       
       <NotificationBell v-if="$store.state.isAuthenticated" />
       
-      <div class="d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2" v-if="$store.state.isAuthenticated">
         <img
           :src="userProfileImage"
           alt="User"

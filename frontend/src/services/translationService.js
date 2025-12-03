@@ -8,6 +8,14 @@ class TranslationService {
 
   async loadTranslations(lang = 'en') {
     try {
+      // If we're offline or backend is not available, use fallback translations
+      if (!store.state.backendUrl) {
+        console.warn('Backend URL not available, using fallback translations');
+        this.translations = this.getFallbackTranslations();
+        this.currentLanguage = lang;
+        return this.translations;
+      }
+      
       const response = await fetch(`${store.state.backendUrl}/api/translations?lang=${lang}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -18,7 +26,9 @@ class TranslationService {
     } catch (error) {
       console.error('Error loading translations:', error);
       // Return English translations as fallback
-      return this.getFallbackTranslations();
+      this.translations = this.getFallbackTranslations();
+      this.currentLanguage = 'en';
+      return this.translations;
     }
   }
 

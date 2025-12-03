@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Static Test</title>
+</head>
+<body>
+    <h1>Static Test Page</h1>
+    <p>If you can see this, the server is working correctly.</p>
+    <button onclick="testJS()">Test JavaScript</button>
+    <p id="result"></p>
+
+    <script>
+        function testJS() {
+            document.getElementById('result').innerHTML = 'JavaScript is working!';
+        }
+        
+        console.log('Static test page loaded');
+    </script>
+</body>
+</html>

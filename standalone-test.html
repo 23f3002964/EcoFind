@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Standalone Vue Test</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>{{ message }}</h1>
+        <button @click="changeMessage">Change Message</button>
+        <p>Count: {{ count }}</p>
+        <button @click="increment">Increment</button>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        console.log('Creating Vue app');
+        
+        const app = createApp({
+            data() {
+                return {
+                    message: 'Hello Vue!',
+                    count: 0
+                }
+            },
+            methods: {
+                changeMessage() {
+                    this.message = 'Vue is working correctly!';
+                },
+                increment() {
+                    this.count++;
+                }
+            },
+            mounted() {
+                console.log('Vue app mounted successfully');
+            }
+        });
+        
+        console.log('Mounting Vue app');
+        app.mount('#app');
+        console.log('Vue app mounted to #app');
+    </script>
+</body>
+</html>

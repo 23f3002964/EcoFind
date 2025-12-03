@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vue Test</title>
+    <script src="node_modules/vue/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>{{ message }}</h1>
+        <button @click="changeMessage">Change Message</button>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+        
+        createApp({
+            data() {
+                return {
+                    message: 'Hello Vue!'
+                }
+            },
+            methods: {
+                changeMessage() {
+                    this.message = 'Vue is working correctly!'
+                }
+            },
+            mounted() {
+                console.log('Vue app mounted');
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>

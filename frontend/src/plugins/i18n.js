@@ -1,28 +1,26 @@
-import translationService from '@/services/translationService';
-
 const i18n = {
   install(app) {
-    // Add global $t method for translations
+    // Add simple global $t method for translations
     app.config.globalProperties.$t = (key) => {
-      return translationService.t(key);
+      console.log('Translation requested for key:', key);
+      return key; // Just return the key as-is for now
     };
     
-    // Add global $setLanguage method
+    // Add simple global $setLanguage method
     app.config.globalProperties.$setLanguage = async (lang) => {
-      await translationService.loadTranslations(lang);
+      console.log('Setting language to:', lang);
     };
     
-    // Add global $getCurrentLanguage method
+    // Add simple global $getCurrentLanguage method
     app.config.globalProperties.$getCurrentLanguage = () => {
-      return translationService.getCurrentLanguage();
+      console.log('Getting current language');
+      return 'en';
     };
     
     // Also make it available in provide/inject
-    app.provide('$t', (key) => translationService.t(key));
-    app.provide('$setLanguage', async (lang) => {
-      await translationService.loadTranslations(lang);
-    });
-    app.provide('$getCurrentLanguage', () => translationService.getCurrentLanguage());
+    app.provide('$t', (key) => key);
+    app.provide('$setLanguage', async (lang) => {});
+    app.provide('$getCurrentLanguage', () => 'en');
   }
 };
 

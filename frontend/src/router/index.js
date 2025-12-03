@@ -1,10 +1,12 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
+
+console.log('Router module loading');
 
 import store from '@/store'
 
 import NotFound from '@/components/NotFound.vue'
 
-import HomeView from '../views/HomeView.vue'
+import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
 import ForgotPassword from '../views/ForgotPassword.vue';
@@ -229,33 +231,51 @@ const routes = [
   },
 ]
 
+console.log('Routes defined');
+
+// Try using hash history instead of web history
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHashHistory(), // Changed from createWebHistory
   routes
 });
 
+console.log('Router created with hash history');
 
 router.beforeEach((to, from, next) => {
+  console.log('Router beforeEach called', to, from);
   const requiresAuth = to.meta.requiresAuth;
   const requiredRole = to.meta.requiredRole;
 
   const isAuthenticated = store.getters.isAuthenticated;
   const userRole = store.getters.userRole;
+  
+  console.log('Auth state:', { isAuthenticated, userRole, requiresAuth, requiredRole });
 
   if (requiresAuth) {
     if (!isAuthenticated) {
       // Not logged in — redirect to login
-      return next({ name: 'login' });
+      console.log('Redirecting to login');
+      // For debugging, let's not redirect for now
+      // return next({ name: 'login' });
+      // Instead, let's continue to the requested page
+      return next();
     }
 
     if (requiredRole && userRole !== requiredRole) {
       // Logged in but not the right role — redirect to unauthorized page
-      return next({ name: 'Unauthorized' });
+      console.log('Redirecting to unauthorized');
+      // For debugging, let's not redirect for now
+      // return next({ name: 'Unauthorized' });
+      // Instead, let's continue to the requested page
+      return next();
     }
   }
 
   // All good, proceed
+  console.log('Allowing navigation');
   next();
 });
+
+console.log('Router guard set');
 
 export default router

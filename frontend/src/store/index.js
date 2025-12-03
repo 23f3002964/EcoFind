@@ -1,10 +1,15 @@
 import { createStore } from "vuex";
 
+console.log('Store module loading');
+
 const stored = sessionStorage.getItem("authData");
 const authData = stored ? JSON.parse(stored) : null;
 
 const storedUser = sessionStorage.getItem("userData");
 const userData = storedUser ? JSON.parse(storedUser) : null;
+
+console.log('Stored auth data:', authData);
+console.log('Stored user data:', userData);
 
 export default createStore({
   state: {

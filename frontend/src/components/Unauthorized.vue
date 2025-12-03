@@ -13,12 +13,10 @@
 
 <script>
 export default {
-
-}
-</script>
-export default {
   name: 'Unauthorized'
 }
+</script>
+
 <style scoped>
 #unauthorized{
     min-height: 90vh;
