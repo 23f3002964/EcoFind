@@ -25,7 +25,7 @@ def createApp():
     app = Flask(__name__)
     app.config.from_object(LocalDevelopmentConfig) 
     # Configure CORS to allow requests from frontend
-    CORS(app, origins=["http://localhost:8080", "http://localhost:8081", "http://localhost:8082"])
+    CORS(app, origins=["http://localhost:*", "http://127.0.0.1:*"])
     db.init_app(app) # Initiating Model
     api.init_app(app) # Initiating Api
     mail.init_app(app) 
