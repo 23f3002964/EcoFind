@@ -3,6 +3,23 @@ const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
   transpileDependencies: [],
   publicPath: '/',  // Explicitly set public path
+  // Configure dev server client to use secure WebSocket when served over HTTPS
+  devServer: (function() {
+    const host = process.env.WDS_HOST || process.env.HOST || '0.0.0.0';
+    const port = process.env.WDS_PORT || process.env.PORT || 8080;
+    const socketUrl = process.env.WDS_SOCKET_URL || `wss://${host}:${port}/ws`;
+
+    return {
+      host,
+      port: parseInt(port),
+      allowedHosts: 'all',
+      client: {
+        webSocketURL: socketUrl,
+        overlay: true
+      },
+      hot: true
+    };
+  })(),
   configureWebpack: {
     resolve: {
       fallback: {
